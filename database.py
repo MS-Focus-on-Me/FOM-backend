@@ -2,8 +2,18 @@ from sqlalchemy import create_engine
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker
 
-# Azure MySQL 서버 정보 넣기
-DATABASE_URL = "mysql+mysqlconnector://zoonhyeong:6Team123@fomdb.mysql.database.azure.com:3306/fomdb"
+import os
+from dotenv import load_dotenv
+
+load_dotenv()  # 현재 디렉토리의 .env 파일 읽기
+
+DB_USER = os.getenv('DB_USER')
+DB_PASSWORD = os.getenv('DB_PASSWORD')
+DB_HOST = os.getenv('DB_HOST')
+DB_PORT = os.getenv('DB_PORT', '3306')
+DB_NAME = os.getenv('DB_NAME')
+
+DATABASE_URL = f"mysql+mysqlconnector://{DB_USER}:{DB_PASSWORD}@{DB_HOST}:{DB_PORT}/{DB_NAME}"
 
 engine = create_engine(DATABASE_URL, echo=True) 
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
