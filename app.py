@@ -19,7 +19,7 @@ app.add_middleware(
     allow_headers=["*"],    # 모든 헤더 허용
 )
 
-# 회원가입 API 예제
+# 회원가입 API
 class SignupData(BaseModel):
     name: str
     email: str
