@@ -17,3 +17,4 @@ async def read_root():
     return {"message": "Hello, FastAPI"}
 
 # test
+# 이제 어떡하죠
