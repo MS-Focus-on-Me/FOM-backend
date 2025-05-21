@@ -68,6 +68,8 @@ class DiaryData(BaseModel):
     email: str
     content: str    
 
+##### 테스트 #####
+
 @app.post("/api/diary")
 async def create_diary(data: DiaryData, db: Session = Depends(get_db)):
     # 사용자 존재 여부 검사 (선택사항, 필요 시)

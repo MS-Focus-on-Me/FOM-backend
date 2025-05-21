@@ -13,5 +13,5 @@ class Diary(Base):
     __tablename__ = 'diaries'
     id = Column(Integer, primary_key=True, autoincrement=True)
     user_email = Column(String(255))
-    content = Column(String, nullable=False)
+    content = Column(String(500), nullable=False)
     created_at = Column(DateTime, server_default=func.now())
