@@ -1,6 +1,8 @@
 from fastapi import FastAPI, HTTPException, Depends
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
+import os
+import uvicorn
 
 app = FastAPI()
 
@@ -48,3 +50,7 @@ async def signup(data: SignupData):
 
     # 정상 처리  
     return {"message": "회원가입이 성공적으로 처리되었습니다.", "username": data.username}  
+
+if __name__ == "__main__":
+    port = int(os.environ.get("PORT", 8000))
+    uvicorn.run("app:app", host="0.0.0.0", port=port)
