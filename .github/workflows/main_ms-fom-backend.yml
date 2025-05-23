@@ -56,13 +56,6 @@ jobs:
       contents: read #This is required for actions/checkout
 
     steps:
-      - name: Set Database URL
-        run: |
-          az webapp config appsettings set \
-            --name ms-fom-backend \
-            --resource-group 6th_final_6team \
-            --settings DATABASE_URL="${{ secrets.DATABASE_URL }}"
-
       # - name: Check DATABASE_URL
       #   run: echo "DATABASE_URL=${{ env.DATABASE_URL }}"
 
@@ -80,6 +73,13 @@ jobs:
           client-id: ${{ secrets.AZUREAPPSERVICE_CLIENTID_52E41C2F564C4FE4890E3703BCE34A5D }}
           tenant-id: ${{ secrets.AZUREAPPSERVICE_TENANTID_D2AE45211DDE4168981F8C54883946DC }}
           subscription-id: ${{ secrets.AZUREAPPSERVICE_SUBSCRIPTIONID_2635FE1232DB4C0DBF3DE70187B79632 }}
+
+      - name: Set Database URL
+        run: |
+          az webapp config appsettings set \
+            --name ms-fom-backend \
+            --resource-group 6th_final_6team \
+            --settings DATABASE_URL="${{ secrets.DATABASE_URL }}"
 
       - name: "Deploy to Azure Web App"
         uses: azure/webapps-deploy@v3
