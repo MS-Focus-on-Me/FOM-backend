@@ -57,6 +57,9 @@ jobs:
     env:
       DATABASE_URL: ${{ secrets.DATABASE_URL }}
     steps:
+      - name: Check DATABASE_URL
+        run: echo "DATABASE_URL=${{ env.DATABASE_URL }}"
+
       - name: Download artifact from build job
         uses: actions/download-artifact@v4
         with:
@@ -64,12 +67,6 @@ jobs:
 
       - name: Unzip artifact for deployment
         run: unzip release.zip
-
-      - name: Confirm DATABASE_URL environment variable
-        run: echo "DATABASE_URL is $DATABASE_URL"
-
-      - name: Confirm DATABASE_URL environment variable2
-        run: printenv | grep DATABASE_URL
 
       - name: Login to Azure
         uses: azure/login@v2
