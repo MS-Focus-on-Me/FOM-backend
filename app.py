@@ -1,8 +1,9 @@
 from fastapi import FastAPI, HTTPException, Depends
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
-import os
-import uvicorn
+from database import SessionLocal, engine
+import models, os, uvicorn
+from sqlalchemy.orm import Session
 
 app = FastAPI()
 
@@ -14,6 +15,38 @@ app.add_middleware(
     allow_methods=["*"],    # 모든 HTTP 메소드 허용
     allow_headers=["*"],    # 모든 헤더 허용
 )
+
+def get_db():
+    db = SessionLocal()
+    try:
+        yield db
+    finally:
+        db.close()
+
+# 회원가입 API
+class SignupData(BaseModel):
+    username: str
+    email: str
+    password: str
+
+@app.post("/api/signup")
+async def signup(data: SignupData, db: Session = Depends(get_db)):
+    # 이메일 중복 체크
+    existing_user = db.query(models.User).filter(models.User.email == data.email).first()
+    if existing_user:
+        raise HTTPException(status_code=400, detail="이메일이 이미 사용 중입니다.")
+    # 새 회원 등록
+    new_user = models.User(
+        username=data.username,
+        email=data.email,
+        password=data.password
+    )
+    db.add(new_user)
+    db.commit()
+    db.refresh(new_user)
+    return {"message": "회원가입 성공!", "user": {"email": new_user.email, "name": new_user.username}}
+
+
 
 ##### 테스트 #####
 
