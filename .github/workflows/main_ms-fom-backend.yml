@@ -60,11 +60,11 @@ jobs:
         run: |
           az webapp config appsettings set \
             --name ms-fom-backend \
-            --resource-group your-resource-group-name \
+            --resource-group 6th_final_6team \
             --settings DATABASE_URL="${{ secrets.DATABASE_URL }}"
 
-      - name: Check DATABASE_URL
-        run: echo "DATABASE_URL=${{ env.DATABASE_URL }}"
+      # - name: Check DATABASE_URL
+      #   run: echo "DATABASE_URL=${{ env.DATABASE_URL }}"
 
       - name: Download artifact from build job
         uses: actions/download-artifact@v4
