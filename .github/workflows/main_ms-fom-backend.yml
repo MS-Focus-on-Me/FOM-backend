@@ -54,9 +54,15 @@ jobs:
     permissions:
       id-token: write #This is required for requesting the JWT
       contents: read #This is required for actions/checkout
-    env:
-      DATABASE_URL: ${{ secrets.DATABASE_URL }}
+
     steps:
+      - name: Set Database URL
+        run: |
+          az webapp config appsettings set \
+            --name ms-fom-backend \
+            --resource-group your-resource-group-name \
+            --settings DATABASE_URL="${{ secrets.DATABASE_URL }}"
+
       - name: Check DATABASE_URL
         run: echo "DATABASE_URL=${{ env.DATABASE_URL }}"
 
