@@ -6,7 +6,7 @@ from dotenv import load_dotenv
 
 load_dotenv()  # 현재 디렉토리의 .env 파일 읽기
 
-DATABASE_URL = os.getenv('DATABASE_URL')
+DATABASE_URL = os.getenv('DATABASE_URL', os.environ.get('DATABASE_URL'))
 engine = create_engine(DATABASE_URL, pool_recycle=500)
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 Base = declarative_base()
