@@ -4,6 +4,8 @@ from pydantic import BaseModel
 from database import SessionLocal, engine
 import models, os, uvicorn
 from sqlalchemy.orm import Session
+from datetime import date, datetime
+from sqlalchemy import func
 
 app = FastAPI()
 
@@ -58,35 +60,96 @@ async def login(user: UserLogin, db: Session = Depends(get_db)):
         return {"success": False, "message": "이메일 또는 비밀번호가 잘못되었습니다.1"}
     if user.password != db_user.password:
         return {"success": False, "message": "이메일 또는 비밀번호가 잘못되었습니다.2"}
-    return {"success": True, "message": "로그인 성공!"}
+    return {"success": True, "message": "로그인 성공!", "user_id": db_user.user_id}
+
+# 기록 생성
+class TempDiaryData(BaseModel):
+    user_id: int
+    title: str
+    content: str
+
+@app.post("/api/temp_diary/create")
+async def create_temp_diary(data: TempDiaryData, db: Session = Depends(get_db)):
+    user = db.query(models.User).filter(models.User.user_id == data.user_id).first()
+
+    if not user:
+        raise HTTPException(status_code=404, detail="사용자를 찾을 수 없습니다.")
+    
+    # 새로운 temp_diary 생성
+    new_temp_diary = models.TempDiary(
+        user_id=user.user_id,
+        title=data.title,
+        content=data.content,
+        created_at=data.created_at
+    )
+
+    db.add(new_temp_diary)
+    db.commit()
+    db.refresh(new_temp_diary)
+    
+    return {"message": "기록 성공", "temp_diary_id": new_temp_diary.temp_diary_id}
+
+
+# 기록 조회
+@app.get("/api/temp_diary/read")
+async def read_temp_diary(user_id: int, db: Session = Depends(get_db)):
+    
+    today = date.today()  # 오늘 날짜 (예: 2025-05-25)
+    # 오늘 date와 동일한 날짜의 기록들 쿼리
+    diaries_today = db.query(models.TempDiary).filter(
+        models.TempDiary.user_id == user_id,
+        func.date(models.TempDiary.created_at) == today
+    ).all()
+
+    return diaries_today
+
+# 기록 수정
+class UpdateTempDiary(BaseModel):
+    title: str = None
+    content: str = None
+    created_at: datetime = None
+
+@app.put("/api/temp_diary/{temp_diary_id}")
+async def update_temp_diary(temp_diary_id: int, data: UpdateTempDiary, db: Session = Depends(get_db)):
+    # 수정할 기록 찾기
+    temp_diary = db.query(models.TempDiary).filter(models.TempDiary.temp_diary_id == temp_diary_id).first()
+
+    if not temp_diary:
+        raise HTTPException(status_code=404, detail="일기를 찾을 수 없습니다.")
+
+    if data.title is not None:
+        temp_diary.title = data.title
+    if data.content is not None:
+        temp_diary.content = data.content
+    if data.created_at is not None:
+        temp_diary.created_at = data.created_at
+        
+    db.commit()
+
+    return {"message": "수정 성공"}
+
+# 기록 삭제
+@app.delete("/api/temp_diary/delete")
+async def delete_temp_diary(temp_diary_id: int, db: Session = Depends(get_db)):
+    # 삭제할 기록 찾기
+    temp_diary = db.query(models.TempDiary).filter(models.TempDiary.temp_diary_id == temp_diary_id).first()
+    
+    if not temp_diary:
+        raise HTTPException(status_code=404, detail="일기를 찾을 수 없습니다.")
+
+    # 삭제 수행
+    db.delete(temp_diary)
+    db.commit()
+
+    return {"message": "삭제 성공"}
+
+# 일기 작성
 
 ########## 테스트 ##########
 
-@app.get("/")
+@app.get("/test")
 async def read_root():
     return {"message": "Hello, FastAPI"}
-
-# @app.post("/api/login")
-# async def login(user: UserLogin):
-#     print(user)  # 데이터 잘 도착했는지 출력 확인
-#     if user.email == "test@test.com" and user.password == "123":
-#         return {"success": True, "message": "로그인 성공!"}
-#     else:
-#         return {"success": False, "message": "로그인 실패: 이메일 또는 비밀번호가 잘못되었습니다."}
-
-# class SignupData(BaseModel):
-#     username: str  
-#     email: str  
-#     password: str  
-
-# @app.post("/api/signup")  
-# async def signup(data: SignupData):  
-#     # 간단한 예제: 이메일 중복 확인 로직  
-#     if data.email == "test@example.com":  
-#         raise HTTPException(status_code=400, detail="이메일이 이미 사용 중입니다.")  
-
-#     # 정상 처리  
-#     return {"message": "회원가입이 성공적으로 처리되었습니다.", "username": data.username}
 
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 8000))
