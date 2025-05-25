@@ -67,17 +67,20 @@ class TempDiaryData(BaseModel):
     user_id: int
     title: str
     content: str
-    created_at: datetime
 
 @app.post("/api/temp_diary/create")
 async def create_temp_diary(data: TempDiaryData, db: Session = Depends(get_db)):
     user = db.query(models.User).filter(models.User.user_id == data.user_id).first()
 
+    if not user:
+        raise HTTPException(status_code=404, detail="사용자를 찾을 수 없습니다.")
+    
     # 새로운 temp_diary 생성
     new_temp_diary = models.TempDiary(
         user_id=user.user_id,
         title=data.title,
-        content=data.content
+        content=data.content,
+        created_at=data.created_at
     )
 
     db.add(new_temp_diary)
@@ -111,6 +114,9 @@ async def update_temp_diary(temp_diary_id: int, data: UpdateTempDiary, db: Sessi
     # 수정할 기록 찾기
     temp_diary = db.query(models.TempDiary).filter(models.TempDiary.temp_diary_id == temp_diary_id).first()
 
+    if not temp_diary:
+        raise HTTPException(status_code=404, detail="일기를 찾을 수 없습니다.")
+
     if data.title is not None:
         temp_diary.title = data.title
     if data.content is not None:
@@ -128,6 +134,9 @@ async def delete_temp_diary(temp_diary_id: int, db: Session = Depends(get_db)):
     # 삭제할 기록 찾기
     temp_diary = db.query(models.TempDiary).filter(models.TempDiary.temp_diary_id == temp_diary_id).first()
     
+    if not temp_diary:
+        raise HTTPException(status_code=404, detail="일기를 찾을 수 없습니다.")
+
     # 삭제 수행
     db.delete(temp_diary)
     db.commit()
