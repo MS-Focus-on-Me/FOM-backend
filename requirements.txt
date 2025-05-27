@@ -89,3 +89,7 @@ uvicorn==0.34.0
 mysql-connector-python
 sqlalchemy
 azure-identity
+tiktoken
+autogen_ext
+autogen_agentchat
+azure-ai-projects==1.0.0b10
