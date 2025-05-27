@@ -89,4 +89,3 @@ uvicorn==0.34.0
 mysql-connector-python
 sqlalchemy
 azure-identity
-git+https://github.com/microsoft/autogen.git
