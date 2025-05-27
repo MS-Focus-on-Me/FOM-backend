@@ -88,3 +88,5 @@ typing_extensions==4.13.1
 uvicorn==0.34.0
 mysql-connector-python
 sqlalchemy
+azure-identity
+git+https://github.com/microsoft/autogen.git

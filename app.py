@@ -1,11 +1,13 @@
-from fastapi import FastAPI, HTTPException, Depends
+from fastapi import FastAPI, HTTPException, Depends, Request
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
-from database import SessionLocal, engine
+from database import SessionLocal
 import models, os, uvicorn
 from sqlalchemy.orm import Session
 from datetime import date, datetime
 from sqlalchemy import func
+from autogen_gpt_diary import writer_workflow
+
 
 app = FastAPI()
 
@@ -109,7 +111,6 @@ async def read_temp_diary(user_id: int, db: Session = Depends(get_db)):
 class UpdateTempDiary(BaseModel):
     title: str = None
     content: str = None
-    created_at: datetime = None
 
 @app.put("/api/temp_diary/{temp_diary_id}")
 async def update_temp_diary(temp_diary_id: int, data: UpdateTempDiary, db: Session = Depends(get_db)):
@@ -123,8 +124,6 @@ async def update_temp_diary(temp_diary_id: int, data: UpdateTempDiary, db: Sessi
         temp_diary.title = data.title
     if data.content is not None:
         temp_diary.content = data.content
-    if data.created_at is not None:
-        temp_diary.created_at = data.created_at
         
     db.commit()
 
@@ -171,8 +170,14 @@ async def create_diary(data: DiaryData, db: Session = Depends(get_db)):
     
     return {"message": "기록 성공", "diary_id": new_diary.diary_id}
 
+# 일기형태 변환
+class QuestionRequest(BaseModel):
+    question_text: str
 
-
+@app.post("/generate_diary")
+async def generate_diary(request: QuestionRequest):
+    result = await writer_workflow(request.question_text)
+    return {"일기 변환": result}
 
 
 ########## 테스트 ##########

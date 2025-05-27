@@ -81,6 +81,17 @@ jobs:
             --resource-group 6th_final_6team \
             --settings DATABASE_URL="${{ secrets.DATABASE_URL }}"
 
+      - name: Set Autogen Env Variables
+        run: |
+          az webapp config appsettings set \
+            --name ms-fom-backend \
+            --resource-group 6th_final_6team \
+            --settings \
+              AUTOGEN_API_KEY="${{ secrets.AUTOGEN_API_KEY }}" \
+              AUTOGEN_MODEL_NAME="${{ secrets.AUTOGEN_MODEL_NAME }}" \
+              AUTOGEN_API_VERSION="${{ secrets.AUTOGEN_API_VERSION }}" \
+              AUTOGEN_AZURE_ENDPOINT="${{ secrets.AUTOGEN_AZURE_ENDPOINT }}"
+
       - name: "Deploy to Azure Web App"
         uses: azure/webapps-deploy@v3
         id: deploy-to-webapp
