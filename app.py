@@ -67,6 +67,8 @@ class TempDiaryData(BaseModel):
     user_id: int
     title: str
     content: str
+    created_at: datetime
+
 
 @app.post("/api/temp_diary/create")
 async def create_temp_diary(data: TempDiaryData, db: Session = Depends(get_db)):
@@ -144,6 +146,34 @@ async def delete_temp_diary(temp_diary_id: int, db: Session = Depends(get_db)):
     return {"message": "삭제 성공"}
 
 # 일기 작성
+class DiaryData(BaseModel):
+    user_id: int
+    content: str
+    created_at: datetime
+
+@app.post("/api/diary/create")
+async def create_diary(data: DiaryData, db: Session = Depends(get_db)):
+    user = db.query(models.User).filter(models.User.user_id == data.user_id).first()
+
+    if not user:
+        raise HTTPException(status_code=404, detail="사용자를 찾을 수 없습니다.")
+    
+    # 새로운 diary 생성
+    new_diary = models.Diary(
+        user_id=user.user_id,
+        content=data.content,
+        created_at=data.created_at
+    )
+
+    db.add(new_diary)
+    db.commit()
+    db.refresh(new_diary)
+    
+    return {"message": "기록 성공", "diary_id": new_diary.diary_id}
+
+
+
+
 
 ########## 테스트 ##########
 
