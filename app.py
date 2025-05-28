@@ -71,7 +71,6 @@ class TempDiaryData(BaseModel):
     content: str
     created_at: datetime
 
-
 @app.post("/api/temp_diary/create")
 async def create_temp_diary(data: TempDiaryData, db: Session = Depends(get_db)):
     user = db.query(models.User).filter(models.User.user_id == data.user_id).first()
@@ -142,7 +141,7 @@ async def delete_temp_diary(temp_diary_id: int, db: Session = Depends(get_db)):
     db.delete(temp_diary)
     db.commit()
 
-    return {"message": "삭제 성공"}
+    return {"message": "기록 삭제 성공"}
 
 # 일기 작성
 class DiaryData(BaseModel):
@@ -169,6 +168,43 @@ async def create_diary(data: DiaryData, db: Session = Depends(get_db)):
     db.refresh(new_diary)
     
     return {"message": "기록 성공", "diary_id": new_diary.diary_id}
+
+# 일기 삭제
+@app.delete("/api/diary/delete")
+async def delete_temp_diary(diary_id: int, db: Session = Depends(get_db)):
+    # 삭제할 기록 찾기
+    diary = db.query(models.Diary).filter(models.Diary.diary_id == diary_id).first()
+    
+    if not diary:
+        raise HTTPException(status_code=404, detail="일기를 찾을 수 없습니다.")
+
+    # 삭제 수행
+    db.delete(diary)
+    db.commit()
+
+    return {"message": "일기 삭제 성공"}
+
+# 일기 수정
+class UpdateDiary(BaseModel):
+    title: str = None
+    content: str = None
+
+@app.put("/api/diary/{diary_id}")
+async def update_diary(diary_id: int, data: UpdateDiary, db: Session = Depends(get_db)):
+    # 수정할 기록 찾기
+    diary = db.query(models.Diary).filter(models.Diary.diary_id == diary_id).first()
+
+    if not diary:
+        raise HTTPException(status_code=404, detail="일기를 찾을 수 없습니다.")
+
+    if data.title is not None:
+        diary.title = data.title
+    if data.content is not None:
+        diary.content = data.content
+        
+    db.commit()
+
+    return {"message": "수정 성공"}
 
 # 일기형태 변환
 class QuestionRequest(BaseModel):
