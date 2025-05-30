@@ -30,20 +30,30 @@ jobs:
           source venv/bin/activate
 
       - name: Install dependencies
-        run: pip install -r requirements.txt
+        run: |
+          source venv/bin/activate
+          pip install --upgrade pip
+          pip install -r requirements.txt
 
       # Optional: Add step to run tests here (PyTest, Django test suites, etc.)
 
+      - name: Clean up and prepare for deployment
+        run: |
+          # 불필요한 파일들 제거
+          rm -rf venv
+          rm -rf .git
+          rm -rf __pycache__
+          find . -name "*.pyc" -delete
+          find . -name "*.pyo" -delete
+
       - name: Zip artifact for deployment
-        run: zip release.zip ./* -r
+        run: zip -r release.zip . -x "venv/*" ".git/*" "*.pyc" "__pycache__/*"
 
       - name: Upload artifact for deployment jobs
         uses: actions/upload-artifact@v4
         with:
           name: python-app
-          path: |
-            release.zip
-            !venv/
+          path: release.zip
 
   deploy:
     runs-on: ubuntu-latest
@@ -71,6 +81,10 @@ jobs:
           tenant-id: ${{ secrets.AZUREAPPSERVICE_TENANTID_B584720549844F0BAB0866B6FF1662ED }}
           subscription-id: ${{ secrets.AZUREAPPSERVICE_SUBSCRIPTIONID_FE0973349A79459A8867022707661CF3 }}
 
+      # 배포 전 잠시 대기 (SCM 컨테이너 안정화)
+      - name: Wait for SCM container stability
+        run: sleep 30
+
       - name: Set Database URL
         run: |
           az webapp config appsettings set \
@@ -78,9 +92,14 @@ jobs:
             --resource-group 6ai-team06 \
             --settings DATABASE_URL="${{ secrets.DATABASE_URL }}"
 
+      # 배포 전 추가 대기
+      - name: Wait before deployment
+        run: sleep 15
+
       - name: "Deploy to Azure Web App"
         uses: azure/webapps-deploy@v3
         id: deploy-to-webapp
         with:
           app-name: "fombackend"
           slot-name: "Production"
+          package: "."
