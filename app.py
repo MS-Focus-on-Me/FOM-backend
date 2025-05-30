@@ -8,8 +8,14 @@ from datetime import date, datetime
 from sqlalchemy import func
 from autogen_gpt_diary import writer_workflow
 
-
 app = FastAPI()
+
+def get_db():
+    db = SessionLocal()
+    try:
+        yield db
+    finally:
+        db.close()
 
 # CORS 허용 정책 추가
 app.add_middleware(
@@ -19,13 +25,6 @@ app.add_middleware(
     allow_methods=["*"],    # 모든 HTTP 메소드 허용
     allow_headers=["*"],    # 모든 헤더 허용
 )
-
-def get_db():
-    db = SessionLocal()
-    try:
-        yield db
-    finally:
-        db.close()
 
 # 회원가입 API
 class SignupData(BaseModel):
