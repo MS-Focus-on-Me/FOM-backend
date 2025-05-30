@@ -72,6 +72,24 @@ jobs:
           tenant-id: ${{ secrets.AZUREAPPSERVICE_TENANTID_B584720549844F0BAB0866B6FF1662ED }}
           subscription-id: ${{ secrets.AZUREAPPSERVICE_SUBSCRIPTIONID_FE0973349A79459A8867022707661CF3 }}
 
+      - name: Set Database URL
+        run: |
+          az webapp config appsettings set \
+            --name fombackend \
+            --resource-group 6ai-team06 \
+            --settings DATABASE_URL="${{ secrets.DATABASE_URL }}"
+
+      - name: Set Autogen Env Variables
+        run: |
+          az webapp config appsettings set \
+            --name ms-fom-backend \
+            --resource-group 6th_final_6team \
+            --settings \
+              AUTOGEN_API_KEY="${{ secrets.AUTOGEN_API_KEY }}" \
+              AUTOGEN_MODEL_NAME="${{ secrets.AUTOGEN_MODEL_NAME }}" \
+              AUTOGEN_API_VERSION="${{ secrets.AUTOGEN_API_VERSION }}" \
+              AUTOGEN_AZURE_ENDPOINT="${{ secrets.AUTOGEN_AZURE_ENDPOINT }}"
+
       - name: 'Deploy to Azure Web App'
         uses: azure/webapps-deploy@v3
         id: deploy-to-webapp
