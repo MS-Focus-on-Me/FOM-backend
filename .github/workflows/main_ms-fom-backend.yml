@@ -96,5 +96,5 @@ jobs:
         uses: azure/webapps-deploy@v3
         id: deploy-to-webapp
         with:
-          app-name: "ms-fom-backend"
+          app-name: "fombackend"
           slot-name: "Production"
