@@ -8,6 +8,7 @@ from datetime import date, datetime
 from sqlalchemy import func
 from convert_diary_format import writer_workflow
 from summary_diary import summary_workflow
+from models import User  # 이미 정의된 User 모델
 
 app = FastAPI()
 
@@ -238,6 +239,14 @@ async def update_user(user_id: int, data: UpdateUserInfo, db: Session = Depends(
     db.commit()
 
     return {"message": "유저 정보 수정 성공"}
+
+# 유저정보 조회
+@app.get("/api/users/{user_id}")
+async def get_user_email(user_id: int, db: Session = Depends(get_db)):
+    user = db.query(models.User).filter(models.User.user_id == user_id).first()
+    if not user:
+        raise HTTPException(status_code=404, detail="유저를 찾을 수 없음")
+    return {"email": user.email}
 
 
 ########## 테스트 ##########
