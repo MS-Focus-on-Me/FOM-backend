@@ -14,6 +14,7 @@ async def writer_workflow(task_prompt: str) -> str:
     model_name = os.getenv('autogen_model_name')
     api_version = os.getenv('autogen_api_version')
     azure_endpoint = os.getenv('autogen_azure_endpoint')
+    azure_deployment = os.getenv('autogen_azure_deployment')
     max_turns: int = 10
     references = """오늘은 학교에서 체육 시간이 있어서 너무 신났다! 줄넘기 시험을 봤는데, 내가 1분 동안 102번이나 넘었어. 선생님이 "정말 잘했어!"라고 칭찬해 주
     셔서 기분이 좋아졌다. 친구 민지랑은 조금 다퉜는데, 내가 실수로 그녀의 필통을 떨어뜨려서 화가 났다. 그래서 미안하다고 했더니 금방 화 풀고 같이 도시락도 먹었다. 
@@ -46,12 +47,12 @@ async def writer_workflow(task_prompt: str) -> str:
     # ^^^^^^^^ 중요: Reviewer가 최종 결과물만 출력하도록 지시를 명확히 추가했습니다.
 
     model_client = AzureOpenAIChatCompletionClient(
-        azure_deployment=model_name,
+        azure_deployment=azure_deployment,
         model=model_name,
         api_version=api_version,
         azure_endpoint=azure_endpoint,
         api_key=api_key
-    )
+)
 
     writer_agent = AssistantAgent(
         name="writer",
@@ -71,12 +72,7 @@ async def writer_workflow(task_prompt: str) -> str:
         TextMentionTermination("최종 결과물") | # Reviewer가 "최종 결과물"이라는 말을 포함하면 종료
         MaxMessageTermination(max_messages=max_turns)
     )
-    # ^^^^^^^^ 중요: termination 조건을 더 명확하게 변경했습니다.
-    # Reviewer가 최종 결과물만 출력할 경우 해당 키워드를 포함하도록 지시했으므로,
-    # 그 키워드를 TextMentionTermination에 넣을 수 있습니다.
-    # 만약 Reviewer가 특정 키워드 없이 최종본만 내놓는다면,
-    # 이 조건은 제거하고 MaxMessageTermination만 사용하는 것이 좋습니다.
-
+    
     team = RoundRobinGroupChat(
         [writer_agent, reviewer_agent],
         termination_condition=termination
