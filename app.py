@@ -6,7 +6,8 @@ import models, os, uvicorn
 from sqlalchemy.orm import Session
 from datetime import date, datetime
 from sqlalchemy import func
-from autogen_gpt_diary import writer_workflow
+from convert_diary_format import writer_workflow
+from summary_diary import summary_workflow
 
 app = FastAPI()
 
@@ -155,11 +156,14 @@ async def create_diary(data: DiaryData, db: Session = Depends(get_db)):
     if not user:
         raise HTTPException(status_code=404, detail="사용자를 찾을 수 없습니다.")
     
+    diary_summary = summary_workflow(data.content)
+
     # 새로운 diary 생성
     new_diary = models.Diary(
         user_id=user.user_id,
         content=data.content,
-        created_at=data.created_at
+        created_at=data.created_at,
+        summary=diary_summary
     )
 
     db.add(new_diary)
@@ -213,6 +217,27 @@ class QuestionRequest(BaseModel):
 async def generate_diary(request: QuestionRequest):
     result = await writer_workflow(request.question_text)
     return {"일기 변환": result}
+
+# 유저정보 수정
+class UpdateUserInfo(BaseModel):
+    email: str = None
+    password: str = None
+
+@app.put("/api/users/{user_id}")
+async def update_user(user_id: int, data: UpdateUserInfo, db: Session = Depends(get_db)):
+    user = db.query(models.User).filter(models.User.user_id == user_id).first()
+
+    if not user:
+        raise HTTPException(status_code=404, detail="유저를 찾을 수 없습니다.")
+    
+    if data.email is not None:
+        user.email = data.email
+    if data.password is not None:
+        user.password = data.password
+        
+    db.commit()
+
+    return {"message": "유저 정보 수정 성공"}
 
 
 ########## 테스트 ##########
