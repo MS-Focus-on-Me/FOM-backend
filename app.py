@@ -162,7 +162,7 @@ async def create_diary(data: DiaryData, db: Session = Depends(get_db)):
     if not user:
         raise HTTPException(status_code=404, detail="사용자를 찾을 수 없습니다.")
     
-    diary_summary = summary_workflow(data.content)
+    diary_summary = await summary_workflow(data.content)
 
     # 새로운 diary 생성
     new_diary = models.Diary(
@@ -194,8 +194,6 @@ async def read_diary_by_date(user_id: int, selected_date: str, db: Session = Dep
         return {"message": "일기가 없습니다."}
 
     return diary_entries
- 
- 
 
 # 일기 삭제
 @app.delete("/api/diary/delete")
@@ -237,10 +235,14 @@ async def update_diary(diary_id: int, data: UpdateDiary, db: Session = Depends(g
 # 일기형태 변환
 class QuestionRequest(BaseModel):
     question_text: str
+    user_id: int
 
 @app.post("/generate_diary")
-async def generate_diary(request: QuestionRequest):
-    result = await writer_workflow(request.question_text)
+async def generate_diary(request: QuestionRequest, db: Session = Depends(get_db)):
+    user_id = request.user_id
+    user = db.query(models.User).filter(models.User.user_id == user_id).first()
+    reference = user.reference_text if user and user.reference_text else None
+    result = await writer_workflow(request.question_text, reference)
     return {"일기 변환": result}
 
 # 유저정보 수정
