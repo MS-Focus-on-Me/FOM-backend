@@ -9,18 +9,21 @@ from dotenv import load_dotenv
 
 load_dotenv()
 
-async def writer_workflow(task_prompt: str) -> str:
+async def writer_workflow(task_prompt: str, reference: str) -> str:
     api_key = os.getenv('autogen_api_key')
     model_name = os.getenv('autogen_model_name')
     api_version = os.getenv('autogen_api_version')
     azure_endpoint = os.getenv('autogen_azure_endpoint')
     azure_deployment = os.getenv('autogen_azure_deployment')
     max_turns: int = 10
-    references = """오늘은 학교에서 체육 시간이 있어서 너무 신났다! 줄넘기 시험을 봤는데, 내가 1분 동안 102번이나 넘었어. 선생님이 "정말 잘했어!"라고 칭찬해 주
-    셔서 기분이 좋아졌다. 친구 민지랑은 조금 다퉜는데, 내가 실수로 그녀의 필통을 떨어뜨려서 화가 났다. 그래서 미안하다고 했더니 금방 화 풀고 같이 도시락도 먹었다. 
-    엄마가 싸주신 김밥이 진짜 맛있어서 반 친구들도 한 개씩 나눠 먹었는데, 다들 맛있다고 해서 뿌듯했어. 집에 와서는 동생이랑 같이 애니메이션을 봤고, 강아지 
-    토리가 내 무릎에 앉아서 같이 봤다. 오늘 하루는 기분 좋은 일도 있고, 속상한 일도 있었지만 전반적으로는 행복한 하루였던 것 같다!"""
-    # 에이전트 설정 (검색결과를 포함함)
+    if reference:
+        references = reference
+    else:
+        references = """오늘은 학교에서 체육 시간이 있어서 너무 신났다! 줄넘기 시험을 봤는데, 내가 1분 동안 102번이나 넘었어. 선생님이 "정말 잘했어!"라고 칭찬해 주
+        셔서 기분이 좋아졌다. 친구 민지랑은 조금 다퉜는데, 내가 실수로 그녀의 필통을 떨어뜨려서 화가 났다. 그래서 미안하다고 했더니 금방 화 풀고 같이 도시락도 먹었다. 
+        엄마가 싸주신 김밥이 진짜 맛있어서 반 친구들도 한 개씩 나눠 먹었는데, 다들 맛있다고 해서 뿌듯했어. 집에 와서는 동생이랑 같이 애니메이션을 봤고, 강아지 
+        토리가 내 무릎에 앉아서 같이 봤다. 오늘 하루는 기분 좋은 일도 있고, 속상한 일도 있었지만 전반적으로는 행복한 하루였던 것 같다!"""
+        # 에이전트 설정 (검색결과를 포함함)
     system_message_writer = f'''
     당신은 문자열 형식으로 전달받은 하루의 여러 일지 기록들을 시간순으로 정렬하여 하나의 자연스럽고 완성도 높은 일기로 재구성하는 전문 에디터입니다.
     요청 작업:
@@ -72,7 +75,7 @@ async def writer_workflow(task_prompt: str) -> str:
         TextMentionTermination("최종 결과물") | # Reviewer가 "최종 결과물"이라는 말을 포함하면 종료
         MaxMessageTermination(max_messages=max_turns)
     )
-    
+
     team = RoundRobinGroupChat(
         [writer_agent, reviewer_agent],
         termination_condition=termination
