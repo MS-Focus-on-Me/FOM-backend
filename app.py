@@ -173,6 +173,25 @@ async def create_diary(data: DiaryData, db: Session = Depends(get_db)):
     
     return {"message": "기록 성공", "diary_id": new_diary.diary_id}
 
+# 일기 조회 (데이트 정보를 리엑트에서 받아옴)
+    # 데이트 인포를 리엑트에서 받아오면 해당하는 날짜의 일기를 조회
+    # 리엑트에서 받아온 날짜 (예: 2025-05-25)
+@app.get("/api/diary/read")
+async def read_diary_by_date(user_id: int, selected_date: str, db: Session = Depends(get_db)):
+    target_date = datetime.strptime(selected_date, "%Y-%m-%d").date()
+
+    diary_entries = db.query(models.Diary).filter(
+        models.Diary.user_id == user_id,
+        func.date(models.Diary.created_at) == target_date
+    ).all()
+
+    if not diary_entries:
+        return {"message": "일기가 없습니다."}
+
+    return diary_entries
+ 
+ 
+
 # 일기 삭제
 @app.delete("/api/diary/delete")
 async def delete_temp_diary(diary_id: int, db: Session = Depends(get_db)):
