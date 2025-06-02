@@ -144,6 +144,11 @@ async def delete_temp_diary(temp_diary_id: int, db: Session = Depends(get_db)):
 
     return {"message": "기록 삭제 성공"}
 
+# 예시
+@app.get("/api/diary/hyunji")
+async def read_diary():
+    return "hi"
+
 # 일기 작성
 class DiaryData(BaseModel):
     user_id: int
