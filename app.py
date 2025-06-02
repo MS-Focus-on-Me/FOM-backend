@@ -248,6 +248,23 @@ async def get_user_email(user_id: int, db: Session = Depends(get_db)):
         raise HTTPException(status_code=404, detail="유저를 찾을 수 없음")
     return {"email": user.email}
 
+# reference 선택
+class ReferenceData(BaseModel):
+    reference_text: str = None
+
+@app.put("/api/users/reference/{user_id}")
+async def select_reference(user_id: int, data: ReferenceData, db: Session = Depends(get_db)):
+    user = db.query(models.User).filter(models.User.user_id == user_id).first()
+
+    if not user:
+        raise HTTPException(status_code=404, detail="유저를 찾을 수 없습니다.")
+    
+    if data.reference_text is not None:
+        user.reference_text = data.reference_text
+    
+    db.commit()
+    return {"message": "reference 수정 성공"}
+
 
 ########## 테스트 ##########
 
