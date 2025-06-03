@@ -1,4 +1,3 @@
-import gradio as gr
 from azure.ai.projects import AIProjectClient
 from azure.identity import AzureCliCredential  # Azure CLI 인증
 from azure.ai.agents.models import ListSortOrder
