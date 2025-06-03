@@ -8,7 +8,6 @@ from datetime import date, datetime
 from sqlalchemy import func
 from convert_diary_format import writer_workflow
 from summary_diary import summary_workflow
-from models import User  # 이미 정의된 User 모델
 from diary_emotion import ask_agent
 import json
 
