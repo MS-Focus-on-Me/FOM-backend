@@ -8,7 +8,7 @@ from datetime import date, datetime
 from sqlalchemy import func
 from convert_diary_format import writer_workflow
 from summary_diary import summary_workflow
-from diary_emotion import ask_agent
+# from diary_emotion import ask_agent
 import json
 
 app = FastAPI()
@@ -267,30 +267,30 @@ async def update_user(user_id: int, data: UpdateUserInfo, db: Session = Depends(
 
     return {"message": "유저 정보 수정 성공"}
 
-# # 유저정보 조회
-# @app.get("/api/users/{user_id}")
-# async def get_user_email(user_id: int, db: Session = Depends(get_db)):
-#     user = db.query(models.User).filter(models.User.user_id == user_id).first()
-#     if not user:
-#         raise HTTPException(status_code=404, detail="유저를 찾을 수 없음")
-#     return {"email": user.email}
+# 유저정보 조회
+@app.get("/api/users/{user_id}")
+async def get_user_email(user_id: int, db: Session = Depends(get_db)):
+    user = db.query(models.User).filter(models.User.user_id == user_id).first()
+    if not user:
+        raise HTTPException(status_code=404, detail="유저를 찾을 수 없음")
+    return {"email": user.email}
 
-# # reference 선택
-# class ReferenceData(BaseModel):
-#     reference_text: str = None
+# reference 선택
+class ReferenceData(BaseModel):
+    reference_text: str = None
 
-# @app.put("/api/users/reference/{user_id}")
-# async def select_reference(user_id: int, data: ReferenceData, db: Session = Depends(get_db)):
-#     user = db.query(models.User).filter(models.User.user_id == user_id).first()
+@app.put("/api/users/reference/{user_id}")
+async def select_reference(user_id: int, data: ReferenceData, db: Session = Depends(get_db)):
+    user = db.query(models.User).filter(models.User.user_id == user_id).first()
 
-#     if not user:
-#         raise HTTPException(status_code=404, detail="유저를 찾을 수 없습니다.")
+    if not user:
+        raise HTTPException(status_code=404, detail="유저를 찾을 수 없습니다.")
     
-#     if data.reference_text is not None:
-#         user.reference_text = data.reference_text
+    if data.reference_text is not None:
+        user.reference_text = data.reference_text
     
-#     db.commit()
-#     return {"message": "reference 수정 성공"}
+    db.commit()
+    return {"message": "reference 수정 성공"}
 
 # # 일기 감정 분석
 # class DiaryInput(BaseModel):
