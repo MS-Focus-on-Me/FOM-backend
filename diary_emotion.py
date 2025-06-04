@@ -1,5 +1,5 @@
 from azure.ai.projects import AIProjectClient
-from azure.identity import DefaultAzureCredential, ClientSecretCredential, ManagedIdentityCredential
+from azure.identity import DefaultAzureCredential, ClientSecretCredential
 from azure.ai.agents.models import ListSortOrder
 import os
 from dotenv import load_dotenv
@@ -32,9 +32,6 @@ def get_credential():
     # except:
     #     return DefaultAzureCredential()
 
-    if os.getenv('MSI_ENDPOINT') or os.getenv('WEBSITE_INSTANCE_ID'):
-        # MSI 환경이면 ManagedIdentityCredential() 사용
-        return ManagedIdentityCredential()
 
     # Azure App Service 환경에서 Client Secret 인증
     if os.getenv('AZURE_CLIENT_ID') and os.getenv('AZURE_TENANT_ID') and os.getenv('AZURE_CLIENT_SECRET'):
