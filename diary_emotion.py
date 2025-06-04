@@ -8,8 +8,8 @@ load_dotenv()
 
 # Service Principal 인증
 credential = ClientSecretCredential(
-    tenant_id=os.getenv('AZUREAPPSERVICE_TENANTID_B584720549844F0BAB0866B6FF1662ED'),
-    client_id=os.getenv('AZUREAPPSERVICE_CLIENTID_1F36E8D705B447EC913C82CB35235211'),
+    tenant_id=os.getenv('AZURE_TENANT_ID'),
+    client_id=os.getenv('AZURE_CLIENT_ID'),
     client_secret=os.getenv('AZURE_CLIENT_SECRET')
 )
 
@@ -20,7 +20,6 @@ project_client = AIProjectClient(
     resource_group_name=os.getenv('emotion_resource_group_name'),
     project_name=os.getenv('emotion_project_name')
 )
-
 
 # 2️⃣ 에이전트 및 새 스레드 생성
 emotion_agent = project_client.agents.get_agent(os.getenv('emotion_agent'))
