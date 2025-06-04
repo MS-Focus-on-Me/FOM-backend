@@ -106,17 +106,17 @@ jobs:
             --resource-group 6ai-team06 \
             --settings DATABASE_URL="${{ secrets.DATABASE_URL }}"
 
-      # Azure AI 관련 환경변수 설정
-      - name: Set Azure AI Environment Variables
-        run: |
-          az webapp config appsettings set \
-            --name fombackend \
-            --resource-group 6ai-team06 \
-            --settings \
-              AZURE_CLIENT_ID="${{ secrets.AZUREAPPSERVICE_CLIENTID_1F36E8D705B447EC913C82CB35235211 }}" \
-              AZURE_TENANT_ID="${{ secrets.AZUREAPPSERVICE_TENANTID_B584720549844F0BAB0866B6FF1662ED }}" \
-              AZURE_CLIENT_SECRET="${{ secrets.AZURE_CLIENT_SECRET }}"
-        continue-on-error: true
+      # # Azure AI 관련 환경변수 설정
+      # - name: Set Azure AI Environment Variables
+      #   run: |
+      #     az webapp config appsettings set \
+      #       --name fombackend \
+      #       --resource-group 6ai-team06 \
+      #       --settings \
+      #         AZURE_CLIENT_ID="${{ secrets.AZUREAPPSERVICE_CLIENTID_1F36E8D705B447EC913C82CB35235211 }}" \
+      #         AZURE_TENANT_ID="${{ secrets.AZUREAPPSERVICE_TENANTID_B584720549844F0BAB0866B6FF1662ED }}" \
+      #         AZURE_CLIENT_SECRET="${{ secrets.AZURE_CLIENT_SECRET }}"
+      #   continue-on-error: true
 
       # 배포 전 추가 대기
       - name: Wait before deployment
