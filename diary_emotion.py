@@ -8,10 +8,11 @@ load_dotenv()
 
 # Service Principal 인증
 credential = ClientSecretCredential(
-    tenant_id=os.getenv('AZURE_TENANT_ID'),
-    client_id=os.getenv('AZURE_CLIENT_ID'),
+    tenant_id=os.getenv('AZUREAPPSERVICE_TENANTID_B584720549844F0BAB0866B6FF1662ED'),
+    client_id=os.getenv('AZUREAPPSERVICE_CLIENTID_1F36E8D705B447EC913C82CB35235211'),
     client_secret=os.getenv('AZURE_CLIENT_SECRET')
 )
+
 project_client = AIProjectClient(
     credential=credential,
     endpoint=os.getenv('emotion_endpoint'),
