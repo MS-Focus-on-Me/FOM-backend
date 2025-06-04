@@ -9,20 +9,22 @@ load_dotenv()
 def get_credential():
     """환경에 따라 적절한 credential 반환"""
 
-    # Azure App Service 환경에서는 Managed Identity 또는 Client Secret 사용
-    if os.getenv('WSN'):  # Azure App Service 환경
-        client_id = os.getenv('AZURE_CLIENT_ID')
-        client_secret = os.getenv('AZURE_CLIENT_SECRET')
-        tenant_id = os.getenv('AZURE_TENANT_ID')
-
-        if client_id and client_secret and tenant_id:
-            return ClientSecretCredential(
-                tenant_id=tenant_id,
-                client_id=client_id,
-                client_secret=client_secret
-            )
-        else:
-            # Managed Identity 사용
+    if os.getenv('MSI_ENDPOINT') or os.getenv('WEBSITE_INSTANCE_ID'):
+        # Azure MSI 환경
+        return ManagedIdentityCredential()
+    elif os.getenv('AZURE_CLIENT_ID'):
+        # Azure App Service에서 ClientSecret Credential 사용
+        return ClientSecretCredential(
+            tenant_id=os.getenv('AZURE_TENANT_ID'),
+            client_id=os.getenv('AZURE_CLIENT_ID'),
+            client_secret=os.getenv('AZURE_CLIENT_SECRET')
+        )
+    else:
+        # 로컬 개발 환경에서 Azure CLI 또는 DefaultCredential
+        try:
+            from azure.identity import AzureCliCredential
+            return AzureCliCredential()
+        except:
             return DefaultAzureCredential()
 
     # 로컬 개발 환경에서는 Azure CLI 사용
@@ -31,24 +33,6 @@ def get_credential():
         return AzureCliCredential()
     except:
         return DefaultAzureCredential()
-
-    # if os.getenv('MSI_ENDPOINT') or os.getenv('WEBSITE_INSTANCE_ID'):
-    #     # MSI 환경이면 ManagedIdentityCredential() 사용
-    #     return ManagedIdentityCredential()
-
-    # # Azure App Service 환경에서 Client Secret 인증
-    # if os.getenv('AZURE_CLIENT_ID') and os.getenv('AZURE_TENANT_ID') and os.getenv('AZURE_CLIENT_SECRET'):
-    #     client_id = os.getenv('AZURE_CLIENT_ID')
-    #     tenant_id = os.getenv('AZURE_TENANT_ID')
-    #     client_secret = os.getenv('AZURE_CLIENT_SECRET')
-    #     return ClientSecretCredential(
-    #         tenant_id=tenant_id,
-    #         client_id=client_id,
-    #         client_secret=client_secret
-    #     )
-
-    # # 로컬 개발 또는 기타 환경에서는 DefaultAzureCredential()
-    # return DefaultAzureCredential()
 
 # 1️⃣ Foundry 프로젝트에 연결
 def create_project_client():
