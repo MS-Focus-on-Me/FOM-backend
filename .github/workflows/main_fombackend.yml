@@ -35,6 +35,20 @@ jobs:
           pip install --upgrade pip
           pip install -r requirements.txt
 
+      # Azure AI 테스트 (선택사항)
+      - name: Test Azure AI Connection
+        run: |
+          source venv/bin/activate
+          python -c "
+          try:
+              from azure.ai.projects import AIProjectClient
+              from azure.identity import DefaultAzureCredential
+              print('✅ Azure AI dependencies installed successfully')
+          except ImportError as e:
+              print(f'⚠️ Azure AI import warning: {e}')
+          "
+        continue-on-error: true
+
       # Optional: Add step to run tests here (PyTest, Django test suites, etc.)
 
       - name: Clean up and prepare for deployment
@@ -92,6 +106,18 @@ jobs:
             --resource-group 6ai-team06 \
             --settings DATABASE_URL="${{ secrets.DATABASE_URL }}"
 
+      # Azure AI 관련 환경변수 설정
+      - name: Set Azure AI Environment Variables
+        run: |
+          az webapp config appsettings set \
+            --name fombackend \
+            --resource-group 6ai-team06 \
+            --settings \
+              AZURE_CLIENT_ID="${{ secrets.AZUREAPPSERVICE_CLIENTID_1F36E8D705B447EC913C82CB35235211 }}" \
+              AZURE_TENANT_ID="${{ secrets.AZUREAPPSERVICE_TENANTID_B584720549844F0BAB0866B6FF1662ED }}" \
+              AZURE_CLIENT_SECRET="${{ secrets.AZURE_CLIENT_SECRET }}"
+        continue-on-error: true
+
       # 배포 전 추가 대기
       - name: Wait before deployment
         run: sleep 15
@@ -103,3 +129,10 @@ jobs:
           app-name: "fombackend"
           slot-name: "Production"
           package: "."
+
+      # 배포 후 Azure AI 연결 테스트 (선택사항)
+      - name: Test Azure AI Connection After Deployment
+        run: |
+          echo "Testing Azure AI connection..."
+          curl -f "${{ steps.deploy-to-webapp.outputs.webapp-url }}/health" || echo "Health check endpoint not available"
+        continue-on-error: true

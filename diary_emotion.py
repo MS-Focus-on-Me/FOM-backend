@@ -1,29 +1,62 @@
 from azure.ai.projects import AIProjectClient
+from azure.identity import DefaultAzureCredential, ClientSecretCredential
 from azure.ai.agents.models import ListSortOrder
 import os
 from dotenv import load_dotenv
-from azure.identity import ManagedIdentityCredential
 
 load_dotenv()
 
-# Service Principal 인증
-credential = ManagedIdentityCredential()
+def get_credential():
+    """환경에 따라 적절한 credential 반환"""
 
-project_client = AIProjectClient(
-    credential=credential,
-    endpoint=os.getenv('emotion_endpoint'),
-    subscription_id=os.getenv('emotion_subscription_id'),
-    resource_group_name=os.getenv('emotion_resource_group_name'),
-    project_name=os.getenv('emotion_project_name')
-)
+    # Azure App Service 환경에서는 Managed Identity 또는 Client Secret 사용
+    if os.getenv('WSN'):  # Azure App Service 환경
+        client_id = os.getenv('AZURE_CLIENT_ID')
+        client_secret = os.getenv('AZURE_CLIENT_SECRET')
+        tenant_id = os.getenv('AZURE_TENANT_ID')
 
-# 2️⃣ 에이전트 및 새 스레드 생성
-emotion_agent = project_client.agents.get_agent(os.getenv('emotion_agent'))
-thread = project_client.agents.threads.create()
+        if client_id and client_secret and tenant_id:
+            return ClientSecretCredential(
+                tenant_id=tenant_id,
+                client_id=client_id,
+                client_secret=client_secret
+            )
+        else:
+            # Managed Identity 사용
+            return DefaultAzureCredential()
+
+    # 로컬 개발 환경에서는 Azure CLI 사용
+    try:
+        from azure.identity import AzureCliCredential
+        return AzureCliCredential()
+    except:
+        return DefaultAzureCredential()
+
+# 1️⃣ Foundry 프로젝트에 연결
+def create_project_client():
+    try:
+        return AIProjectClient(
+            credential=get_credential(),
+            endpoint=os.getenv('emotion_endpoint'),
+            subscription_id=os.getenv('emotion_subscription_id'),
+            resource_group_name=os.getenv('emotion_resource_group_name'),
+            project_name=os.getenv('emotion_project_name')
+        )
+    except Exception as e:
+        print(f"Azure AI Project 연결 실패: {e}")
+        return None
 
 # 3️⃣ 유저 질문 처리 함수
 def ask_agent(user_input):
     try:
+        project_client = create_project_client()
+        if not project_client:
+            return {"error": "Azure AI Project 연결에 실패했습니다."}
+
+        # 에이전트 및 새 스레드 생성
+        emotion_agent = project_client.agents.get_agent(os.getenv('emotion_agent'))
+        thread = project_client.agents.threads.create()
+
         # 사용자 메시지 전송
         project_client.agents.messages.create(
             thread_id=thread.id,
@@ -64,12 +97,10 @@ def ask_agent(user_input):
     except Exception as e:
         return {"error": f"❗ 예외 발생: {str(e)}"}
 
-user_input = """오늘은 학교에서 체육 시간이 있어서 너무 신났다! 줄넘기 시험을 봤는데, 내가 1분 동안 102번이나 넘었어. 선생님이 "정말 잘했어!"라고 칭찬해 주
-        셔서 기분이 좋아졌다. 친구 민지랑은 조금 다퉜는데, 내가 실수로 그녀의 필통을 떨어뜨려서 화가 났다. 그래서 미안하다고 했더니 금방 화 풀고 같이 도시락도 먹었다. 
-        엄마가 싸주신 김밥이 진짜 맛있어서 반 친구들도 한 개씩 나눠 먹었는데, 다들 맛있다고 해서 뿌듯했어. 집에 와서는 동생이랑 같이 애니메이션을 봤고, 강아지 
-        토리가 내 무릎에 앉아서 같이 봤다. 오늘 하루는 기분 좋은 일도 있고, 속상한 일도 있었지만 전반적으로는 행복한 하루였던 것 같다!"""
-
+# Flask 앱 예시 (필요시)
 if __name__ == "__main__":
+    # 테스트용
+    user_input = """오늘은 학교에서 체육 시간이 있어서 너무 신났다!"""
     result = ask_agent(user_input)
     print("\n+++++++++++++최종 결과물+++++++++++++\n")
     print(result)

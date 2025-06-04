@@ -304,7 +304,6 @@ class DiaryInput(BaseModel):
 async def create_emotion(data: DiaryInput, db:Session = Depends(get_db)):
     diary = db.query(models.Diary).filter(models.Diary.diary_id == data.diary_id).first()
     
-    temp_emotion_list = []
 
     # 일기 텍스트
     diary_text = data.diary_text
