@@ -1,19 +1,25 @@
 from azure.ai.projects import AIProjectClient
-from azure.identity import AzureCliCredential  # Azure CLI 인증
 from azure.ai.agents.models import ListSortOrder
 import os
 from dotenv import load_dotenv
+from azure.identity import ClientSecretCredential
 
 load_dotenv()
 
-# 1️⃣ Foundry 프로젝트에 연결 (Azure CLI 로그인 필요)
+# Service Principal 인증
+credential = ClientSecretCredential(
+    tenant_id=os.getenv('AZURE_TENANT_ID'),
+    client_id=os.getenv('AZURE_CLIENT_ID'),
+    client_secret=os.getenv('AZURE_CLIENT_SECRET')
+)
 project_client = AIProjectClient(
-    credential=AzureCliCredential(),
+    credential=credential,
     endpoint=os.getenv('emotion_endpoint'),
     subscription_id=os.getenv('emotion_subscription_id'),
     resource_group_name=os.getenv('emotion_resource_group_name'),
     project_name=os.getenv('emotion_project_name')
 )
+
 
 # 2️⃣ 에이전트 및 새 스레드 생성
 emotion_agent = project_client.agents.get_agent(os.getenv('emotion_agent'))
