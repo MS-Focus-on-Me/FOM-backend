@@ -311,8 +311,9 @@ async def create_emotion(data: DiaryInput, db:Session = Depends(get_db)):
     # 감정 분석
     analysis_result = ask_agent(diary_text)
     
-    response_text = analysis_result['response']
+    response_text = analysis_result.get('response', '')
     
+    print(response_text)
     json_str = response_text.strip()
     if json_str.startswith("```json"):
         json_str = json_str[len("```json"):].strip()
