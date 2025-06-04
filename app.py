@@ -314,7 +314,6 @@ async def create_emotion(data: DiaryInput, db:Session = Depends(get_db)):
     response_text = analysis_result.get('response', '')
     # response_text = analysis_result['response']
 
-
     json_str = response_text.strip()
     if json_str.startswith("```json"):
         json_str = json_str[len("```json"):].strip()
