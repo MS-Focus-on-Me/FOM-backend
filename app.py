@@ -8,7 +8,7 @@ from datetime import date, datetime
 from sqlalchemy import func
 from convert_diary_format import writer_workflow
 from summary_diary import summary_workflow
-from diary_emotion import ask_agent
+# from diary_emotion import ask_agent
 import json
 
 app = FastAPI()
@@ -267,122 +267,122 @@ async def update_user(user_id: int, data: UpdateUserInfo, db: Session = Depends(
 
     return {"message": "유저 정보 수정 성공"}
 
-# # 유저정보 조회
-# @app.get("/api/users/{user_id}")
-# async def get_user_email(user_id: int, db: Session = Depends(get_db)):
-#     user = db.query(models.User).filter(models.User.user_id == user_id).first()
-#     if not user:
-#         raise HTTPException(status_code=404, detail="유저를 찾을 수 없음")
-#     return {"email": user.email}
+# 유저정보 조회
+@app.get("/api/users/{user_id}")
+async def get_user_email(user_id: int, db: Session = Depends(get_db)):
+    user = db.query(models.User).filter(models.User.user_id == user_id).first()
+    if not user:
+        raise HTTPException(status_code=404, detail="유저를 찾을 수 없음")
+    return {"email": user.email}
 
-# # reference 선택
-# class ReferenceData(BaseModel):
-#     reference_text: str = None
+# reference 선택
+class ReferenceData(BaseModel):
+    reference_text: str = None
 
-# @app.put("/api/users/reference/{user_id}")
-# async def select_reference(user_id: int, data: ReferenceData, db: Session = Depends(get_db)):
-#     user = db.query(models.User).filter(models.User.user_id == user_id).first()
+@app.put("/api/users/reference/{user_id}")
+async def select_reference(user_id: int, data: ReferenceData, db: Session = Depends(get_db)):
+    user = db.query(models.User).filter(models.User.user_id == user_id).first()
 
-#     if not user:
-#         raise HTTPException(status_code=404, detail="유저를 찾을 수 없습니다.")
+    if not user:
+        raise HTTPException(status_code=404, detail="유저를 찾을 수 없습니다.")
     
-#     if data.reference_text is not None:
-#         user.reference_text = data.reference_text
+    if data.reference_text is not None:
+        user.reference_text = data.reference_text
     
-#     db.commit()
-#     return {"message": "reference 수정 성공"}
+    db.commit()
+    return {"message": "reference 수정 성공"}
 
-# # 일기 감정 분석
-# class DiaryInput(BaseModel):
-#     user_id: int
-#     diary_id: int
-#     diary_text: str
+# 일기 감정 분석
+class DiaryInput(BaseModel):
+    user_id: int
+    diary_id: int
+    diary_text: str
 
-# @app.post("/api/emotion/create")
-# async def create_emotion(data: DiaryInput, db:Session = Depends(get_db)):
-#     diary = db.query(models.Diary).filter(models.Diary.diary_id == data.diary_id).first()
+@app.post("/api/emotion/create")
+async def create_emotion(data: DiaryInput, db:Session = Depends(get_db)):
+    diary = db.query(models.Diary).filter(models.Diary.diary_id == data.diary_id).first()
     
-#     temp_emotion_list = []
+    temp_emotion_list = []
 
-#     # 일기 텍스트
-#     diary_text = data.diary_text
+    # 일기 텍스트
+    diary_text = data.diary_text
 
-#     # 감정 분석
-#     analysis_result = ask_agent(diary_text)
+    # 감정 분석
+    analysis_result = ask_agent(diary_text)
     
-#     response_text = analysis_result['response']
+    response_text = analysis_result['response']
     
-#     json_str = response_text.strip()
-#     if json_str.startswith("```json"):
-#         json_str = json_str[len("```json"):].strip()
-#     if json_str.endswith("```"):
-#         json_str = json_str[:-3].strip()
+    json_str = response_text.strip()
+    if json_str.startswith("```json"):
+        json_str = json_str[len("```json"):].strip()
+    if json_str.endswith("```"):
+        json_str = json_str[:-3].strip()
         
-#     if isinstance(analysis_result, dict):
-#         try:
-#             response_text = analysis_result['response']  # 문자열 추출
+    if isinstance(analysis_result, dict):
+        try:
+            response_text = analysis_result['response']  # 문자열 추출
 
-#             # "```json"과 "```" 문자를 제거하여 JSON 문자열만 추출
-#             json_str = response_text.strip()
-#             if json_str.startswith("```json"):
-#                 json_str = json_str[len("```json"):].strip()
-#             if json_str.endswith("```"):
-#                 json_str = json_str[:-3].strip()
+            # "```json"과 "```" 문자를 제거하여 JSON 문자열만 추출
+            json_str = response_text.strip()
+            if json_str.startswith("```json"):
+                json_str = json_str[len("```json"):].strip()
+            if json_str.endswith("```"):
+                json_str = json_str[:-3].strip()
 
-#             # JSON 문자열을 딕셔너리로 로드
-#             json_data = json.loads(json_str)
-#             first_item = json_data[0]  # 리스트의 첫 번째 요소
-#             emotions = first_item['감정']
+            # JSON 문자열을 딕셔너리로 로드
+            json_data = json.loads(json_str)
+            first_item = json_data[0]  # 리스트의 첫 번째 요소
+            emotions = first_item['감정']
 
-#             joy = emotions.get("기쁨", 0)
-#             sadness = emotions.get("슬픔", 0)
-#             anger = emotions.get("분노", 0)
-#             fear = emotions.get("공포", 0)
-#             disgust = emotions.get("혐오", 0)
-#             anxiety = emotions.get("불안", 0)
-#             envy = emotions.get("부러움", 0)
-#             bewilderment = emotions.get("당황", 0)
-#             boredom = emotions.get("따분", 0)
+            joy = emotions.get("기쁨", 0)
+            sadness = emotions.get("슬픔", 0)
+            anger = emotions.get("분노", 0)
+            fear = emotions.get("공포", 0)
+            disgust = emotions.get("혐오", 0)
+            anxiety = emotions.get("불안", 0)
+            envy = emotions.get("부러움", 0)
+            bewilderment = emotions.get("당황", 0)
+            boredom = emotions.get("따분", 0)
 
-#         except Exception as e:
-#             print("파싱 에러:", e)
-#             joy = sadness = anger = fear = disgust = anxiety = envy = bewilderment = boredom = 0
+        except Exception as e:
+            print("파싱 에러:", e)
+            joy = sadness = anger = fear = disgust = anxiety = envy = bewilderment = boredom = 0
 
-#         # 감정 저장
-#         new_emotion = models.Emotion(
-#             user_id=data.user_id,
-#             diary_id=diary.diary_id,
-#             joy=joy,
-#             sadness=sadness,
-#             anger=anger,
-#             fear=fear,
-#             disgust=disgust,
-#             anxiety=anxiety,
-#             envy=envy,
-#             bewilderment=bewilderment,
-#             boredom=boredom
-#         )
+        # 감정 저장
+        new_emotion = models.Emotion(
+            user_id=data.user_id,
+            diary_id=diary.diary_id,
+            joy=joy,
+            sadness=sadness,
+            anger=anger,
+            fear=fear,
+            disgust=disgust,
+            anxiety=anxiety,
+            envy=envy,
+            bewilderment=bewilderment,
+            boredom=boredom
+        )
 
-#         db.add(new_emotion)
-#         db.commit()
-#         db.refresh(new_emotion)
+        db.add(new_emotion)
+        db.commit()
+        db.refresh(new_emotion)
 
-#         return {
-#             "diary_text": diary_text,
-#             "emotions": {
-#                 "기쁨": joy,
-#                 "슬픔": sadness,
-#                 "분노": anger,
-#                 "공포": fear,
-#                 "혐오": disgust,
-#                 "불안": anxiety,
-#                 "부러움": envy,
-#                 "당황": bewilderment,
-#                 "따분": boredom
-#             }
-#         }
-#     else:
-#         raise HTTPException(status_code=400, detail="감정 분석 실패 또는 유효하지 않은 결과입니다.")
+        return {
+            "diary_text": diary_text,
+            "emotions": {
+                "기쁨": joy,
+                "슬픔": sadness,
+                "분노": anger,
+                "공포": fear,
+                "혐오": disgust,
+                "불안": anxiety,
+                "부러움": envy,
+                "당황": bewilderment,
+                "따분": boredom
+            }
+        }
+    else:
+        raise HTTPException(status_code=400, detail="감정 분석 실패 또는 유효하지 않은 결과입니다.")
 
 
 
