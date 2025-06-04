@@ -97,6 +97,8 @@ async def writer_workflow(task_prompt: str, reference: str) -> str:
             final_output = "대화 기록이 없습니다." # 디버깅을 위해 추가
     print("\n+++++++++++++반환전 결과+++++++++++++\n")
     print(chat_history.messages) # 전체 대화 내용을 출력하여 디버깅에 도움
+    print("최종 : " + final_output)
+    print(type(final_output))
     return final_output
 # ^^^^^^^^ 중요: chat_history.messages[-2] -> chat_history.messages[-1]로 변경
 
