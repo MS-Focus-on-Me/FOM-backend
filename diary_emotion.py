@@ -97,6 +97,8 @@ def ask_agent(user_input):
             order=ListSortOrder.ASCENDING
         )
 
+        print(messages)
+
         last_response_text = None
         for msg in reversed(list(messages)):
             if msg.role == "assistant" and msg.text_messages:
