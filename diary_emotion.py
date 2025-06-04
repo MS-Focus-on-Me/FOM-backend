@@ -97,7 +97,7 @@ def ask_agent(user_input):
             order=ListSortOrder.ASCENDING
         )
 
-        print(messages)
+        print("messages" + messages)
 
         last_response_text = None
         for msg in reversed(list(messages)):
@@ -107,7 +107,7 @@ def ask_agent(user_input):
 
         # 마지막 응답이 JSON 문자열일 경우 파싱
         import json
-        print("응답 텍스트:", last_response_text)
+        print("응답 텍스트:", last_response_text) # 응답이 안오네
         try:
             response_json = json.loads(last_response_text)
             return response_json
