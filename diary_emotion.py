@@ -2,17 +2,12 @@ from azure.ai.projects import AIProjectClient
 from azure.ai.agents.models import ListSortOrder
 import os
 from dotenv import load_dotenv
-from azure.identity import ClientSecretCredential
+from azure.identity import ManagedIdentityCredential
 
 load_dotenv()
 
 # Service Principal 인증
-credential = ClientSecretCredential(
-    tenant_id=os.getenv('AZURE_TENANT_ID'),
-    client_id=os.getenv('AZURE_CLIENT_ID'),
-    client_secret=os.getenv('AZURE_CLIENT_SECRET'),
-    authority="https://login.microsoftonline.com"
-)
+credential = ManagedIdentityCredential()
 
 project_client = AIProjectClient(
     credential=credential,
