@@ -311,7 +311,7 @@ async def create_emotion(data: DiaryInput, db:Session = Depends(get_db)):
     print(diary_text)
     # 감정 분석
     analysis_result = ask_agent(diary_text)
-    print(analysis_result)
+    
     response_text = analysis_result.get('response', '')
     # response_text = analysis_result['response']
 
