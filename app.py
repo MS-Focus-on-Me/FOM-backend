@@ -314,6 +314,7 @@ async def create_emotion(data: DiaryInput, db:Session = Depends(get_db)):
     response_text = analysis_result.get('response', '')
     
     print(response_text)
+    print(12312313213)
     json_str = response_text.strip()
     if json_str.startswith("```json"):
         json_str = json_str[len("```json"):].strip()
@@ -322,6 +323,8 @@ async def create_emotion(data: DiaryInput, db:Session = Depends(get_db)):
         
     if isinstance(analysis_result, dict):
         try:
+            print(analysis_result)
+            print(type(analysis_result))
             response_text = analysis_result['response']  # 문자열 추출
 
             # "```json"과 "```" 문자를 제거하여 JSON 문자열만 추출
