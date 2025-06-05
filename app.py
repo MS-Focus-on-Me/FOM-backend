@@ -308,10 +308,8 @@ async def create_emotion(data: DiaryInput, db:Session = Depends(get_db)):
     # 일기 텍스트
     diary_text = data.diary_text
     
-    print(diary_text)
     # 감정 분석
     analysis_result = request_gpt(diary_text)
-    print(analysis_result)
     
     response_text = analysis_result.get('response', '')
     # response_text = analysis_result['response']
