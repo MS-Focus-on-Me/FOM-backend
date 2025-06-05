@@ -17,7 +17,7 @@ class Diary(Base):
     user_id = Column(Integer, ForeignKey('users.user_id'), nullable=False)
     emotion_score = Column(Integer)
     summary = Column(Text)
-    photo = Column(BLOB)
+    photo = Column(String(2048))
     content = Column(Text)
     created_at = Column(DateTime(timezone=True), server_default=func.now())
 
