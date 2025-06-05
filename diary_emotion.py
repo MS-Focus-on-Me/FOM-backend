@@ -1,5 +1,5 @@
 from azure.ai.projects import AIProjectClient
-from azure.identity import DefaultAzureCredential, ClientSecretCredential
+from azure.identity import DefaultAzureCredential, ClientSecretCredential, ManagedIdentityCredential
 from azure.ai.agents.models import ListSortOrder
 import os
 from dotenv import load_dotenv
@@ -9,26 +9,23 @@ load_dotenv()
 def get_credential():
     """환경에 따라 적절한 credential 반환"""
 
-    # ManagedIdentityCredential 이걸 사용해야 될거 같습니다.
-    # 404 에러는 워크 플로우에서 
-    # curl -f "${{ steps.deploy-to-webapp.outputs.webapp-url }}/health" || echo "Health check endpoint not available"
-    # 이거 때문인거 같습니다.
+    credential = ManagedIdentityCredential()
+    return credential
+    # # Azure App Service 환경에서는 Managed Identity 또는 Client Secret 사용
+    # if os.getenv('WSN'):  # Azure App Service 환경
+    #     client_id = os.getenv('AZURE_CLIENT_ID')
+    #     client_secret = os.getenv('AZURE_CLIENT_SECRET')
+    #     tenant_id = os.getenv('AZURE_TENANT_ID')
 
-    # Azure App Service 환경에서는 Managed Identity 또는 Client Secret 사용
-    if os.getenv('WSN'):  # Azure App Service 환경
-        client_id = os.getenv('AZURE_CLIENT_ID')
-        client_secret = os.getenv('AZURE_CLIENT_SECRET')
-        tenant_id = os.getenv('AZURE_TENANT_ID')
-
-        if client_id and client_secret and tenant_id:
-            return ClientSecretCredential(
-                tenant_id=tenant_id,
-                client_id=client_id,
-                client_secret=client_secret
-            )
-        else:
-            # Managed Identity 사용
-            return DefaultAzureCredential()
+    #     if client_id and client_secret and tenant_id:
+    #         return ClientSecretCredential(
+    #             tenant_id=tenant_id,
+    #             client_id=client_id,
+    #             client_secret=client_secret
+    #         )
+    #     else:
+    #         # Managed Identity 사용
+    #         return DefaultAzureCredential()
 
     # 로컬 개발 환경에서는 Azure CLI 사용
     try:
