@@ -1,60 +1,47 @@
 from azure.ai.projects import AIProjectClient
-from azure.identity import DefaultAzureCredential, ClientSecretCredential, ManagedIdentityCredential
+from azure.identity import DefaultAzureCredential, ClientSecretCredential
 from azure.ai.agents.models import ListSortOrder
 import os
 from dotenv import load_dotenv
 
 load_dotenv()
 
-# def get_credential():
-#     """환경에 따라 적절한 credential 반환"""
+def get_credential():
+    """환경에 따라 적절한 credential 반환"""
 
-#     # # Azure App Service 환경에서는 Managed Identity 또는 Client Secret 사용
-#     # if os.getenv('WSN'):  # Azure App Service 환경
-#     #     client_id = os.getenv('AZURE_CLIENT_ID')
-#     #     client_secret = os.getenv('AZURE_CLIENT_SECRET')
-#     #     tenant_id = os.getenv('AZURE_TENANT_ID')
+    # ManagedIdentityCredential 이걸 사용해야 될거 같습니다.
+    # 404 에러는 워크 플로우에서 
+    # curl -f "${{ steps.deploy-to-webapp.outputs.webapp-url }}/health" || echo "Health check endpoint not available"
+    # 이거 때문인거 같습니다.
 
-#     #     if client_id and client_secret and tenant_id:
-#     #         return ClientSecretCredential(
-#     #             tenant_id=tenant_id,
-#     #             client_id=client_id,
-#     #             client_secret=client_secret
-#     #         )
-#     #     else:
-#     #         # Managed Identity 사용
-#     #         return DefaultAzureCredential()
+    # Azure App Service 환경에서는 Managed Identity 또는 Client Secret 사용
+    if os.getenv('WSN'):  # Azure App Service 환경
+        client_id = os.getenv('AZURE_CLIENT_ID')
+        client_secret = os.getenv('AZURE_CLIENT_SECRET')
+        tenant_id = os.getenv('AZURE_TENANT_ID')
 
-#     # # 로컬 개발 환경에서는 Azure CLI 사용
-#     # try:
-#     #     from azure.identity import AzureCliCredential
-#     #     return AzureCliCredential()
-#     # except:
-#     #     return DefaultAzureCredential()
+        if client_id and client_secret and tenant_id:
+            return ClientSecretCredential(
+                tenant_id=tenant_id,
+                client_id=client_id,
+                client_secret=client_secret
+            )
+        else:
+            # Managed Identity 사용
+            return DefaultAzureCredential()
 
-#     if os.getenv('MSI_ENDPOINT') or os.getenv('WEBSITE_INSTANCE_ID'):
-#         # MSI 환경이면 ManagedIdentityCredential() 사용
-#         return ManagedIdentityCredential()
-
-#     # Azure App Service 환경에서 Client Secret 인증
-#     if os.getenv('AZURE_CLIENT_ID') and os.getenv('AZURE_TENANT_ID') and os.getenv('AZURE_CLIENT_SECRET'):
-#         client_id = os.getenv('AZURE_CLIENT_ID')
-#         tenant_id = os.getenv('AZURE_TENANT_ID')
-#         client_secret = os.getenv('AZURE_CLIENT_SECRET')
-#         return ClientSecretCredential(
-#             tenant_id=tenant_id,
-#             client_id=client_id,
-#             client_secret=client_secret
-#         )
-
-#     # 로컬 개발 또는 기타 환경에서는 DefaultAzureCredential()
-#     return DefaultAzureCredential()
+    # 로컬 개발 환경에서는 Azure CLI 사용
+    try:
+        from azure.identity import AzureCliCredential
+        return AzureCliCredential()
+    except:
+        return DefaultAzureCredential()
 
 # 1️⃣ Foundry 프로젝트에 연결
 def create_project_client():
     try:
         return AIProjectClient(
-            credential=DefaultAzureCredential(),
+            credential=get_credential(),
             endpoint=os.getenv('emotion_endpoint'),
             subscription_id=os.getenv('emotion_subscription_id'),
             resource_group_name=os.getenv('emotion_resource_group_name'),
@@ -97,8 +84,6 @@ def ask_agent(user_input):
             order=ListSortOrder.ASCENDING
         )
 
-        print("messages" + messages)
-
         last_response_text = None
         for msg in reversed(list(messages)):
             if msg.role == "assistant" and msg.text_messages:
@@ -107,7 +92,7 @@ def ask_agent(user_input):
 
         # 마지막 응답이 JSON 문자열일 경우 파싱
         import json
-        print("응답 텍스트:", last_response_text) # 응답이 안오네
+        print("응답 텍스트:", last_response_text)
         try:
             response_json = json.loads(last_response_text)
             return response_json

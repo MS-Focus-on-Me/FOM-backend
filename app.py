@@ -9,6 +9,7 @@ from sqlalchemy import func
 from convert_diary_format import writer_workflow
 from summary_diary import summary_workflow
 from diary_emotion import ask_agent
+from dalle_diary import generate_mone_pastel_image
 import json
 # from dalle_diary import generate_mone_pastel_image
 
@@ -387,6 +388,71 @@ async def create_emotion(data: DiaryInput, db:Session = Depends(get_db)):
         }
     else:
         raise HTTPException(status_code=400, detail="감정 분석 실패 또는 유효하지 않은 결과입니다.")
+
+# 감정 조회
+@app.get("/api/emotion/read")
+def get_latest_emotion(user_id: int, diary_id: int, db: Session = Depends(get_db)):
+    # 가장 최근 생성된 emotion 검색
+    user = db.query(models.User).filter(models.User.user_id == user_id).first()
+
+    emotion = (
+        db.query(models.Emotion)
+        .filter(models.Emotion.user_id == user_id, models.Emotion.diary_id == diary_id)
+        .order_by(models.Emotion.created_at.desc())
+        .first()
+    )
+
+    if not emotion:
+        raise HTTPException(status_code=404, detail="감정 기록이 없습니다.")
+    
+    # 반환할 데이터 구성을 딕셔너리로 만들어서 반환
+    return {
+        "emotion_id": emotion.emotion_id,
+        "user_id": emotion.user_id,
+        "diary_id": emotion.diary_id,
+        "joy": emotion.joy,
+        "sadness": emotion.sadness,
+        "anger": emotion.anger,
+        "fear": emotion.fear,
+        "disgust": emotion.disgust,
+        "anxiety": emotion.anxiety,
+        "envy": emotion.envy,
+        "bewilderment": emotion.bewilderment,
+        "boredom": emotion.boredom,
+        "created_at": emotion.created_at
+    }
+
+# 일기 이미지 생성
+class ImageData(BaseModel):
+    diary_id: int
+    content: str
+    created_at: datetime
+
+@app.put("/api/diary/image/create")
+def create_image(data: ImageData, db: Session = Depends(get_db)):
+    # 기존 diary 찾기 (diary_id에 해당하는 일기)
+    diary = db.query(models.Diary).filter(models.Diary.diary_id == data.diary_id).first()
+
+    if not diary:
+        raise HTTPException(status_code=404, detail="일기를 찾을 수 없습니다.")
+
+    print(data.content)
+    # 이미지 생성
+    image_url, filename = generate_mone_pastel_image(data.content)
+    
+    # 기존 diary의 photo 필드를 새 URL로 수정
+    diary.photo = image_url
+
+    # 변경 내용 저장
+    db.commit()
+    db.refresh(diary)  # 선택적, 최신 상태 가져오기
+
+    return {
+        "message": "기록 성공",
+        "URL": image_url,
+        "FILENAME": filename
+    }
+
 
 # class GenerateImageRequest(BaseModel):
 #     diary_text: str
