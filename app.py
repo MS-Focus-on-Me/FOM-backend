@@ -453,25 +453,6 @@ def create_image(data: ImageData, db: Session = Depends(get_db)):
         "FILENAME": filename
     }
 
-
-# class GenerateImageRequest(BaseModel):
-#     diary_text: str
-#     style: str = "natural"  # optional, default 자연스러움
-
-# @app.post("/generate_diary_image")
-# async def generate_diary_image(data: GenerateImageRequest):
-#     # 프롬프트 구성
-#     prompt = f"{data.diary_text} 이 일기에 나오는 풍경 중 하나를 vivid하지 않은 파스텔톤의 모네 그림으로 그려줘. 글씨는 안 나오게."
-#     try:
-#         result = generate_mone_pastel_image(prompt, style=data.style)
-#         return {
-#             "image_url": result["image_url"],
-#             "file_name": result["file_name"]
-#         }
-#     except Exception as e:
-#         raise HTTPException(status_code=500, detail=str(e))
-
-
 ########## 테스트 ##########
 
 @app.get("/test")
