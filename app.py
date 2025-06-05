@@ -8,7 +8,7 @@ from datetime import date, datetime
 from sqlalchemy import func
 from convert_diary_format import writer_workflow
 from summary_diary import summary_workflow
-from diary_emotion import ask_agent
+from emotion import request_gpt
 from dalle_diary import generate_mone_pastel_image
 import json
 # from dalle_diary import generate_mone_pastel_image
@@ -304,14 +304,13 @@ class DiaryInput(BaseModel):
 @app.post("/api/emotion/create")
 async def create_emotion(data: DiaryInput, db:Session = Depends(get_db)):
     diary = db.query(models.Diary).filter(models.Diary.diary_id == data.diary_id).first()
-    
 
     # 일기 텍스트
     diary_text = data.diary_text
     
     print(diary_text)
     # 감정 분석
-    analysis_result = ask_agent(diary_text)
+    analysis_result = request_gpt(diary_text)
     print(analysis_result)
     
     response_text = analysis_result.get('response', '')

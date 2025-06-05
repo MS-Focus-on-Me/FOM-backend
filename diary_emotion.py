@@ -9,7 +9,7 @@ load_dotenv()
 def get_credential():
     """환경에 따라 적절한 credential 반환"""
 
-    credential = ManagedIdentityCredential()
+    credential = DefaultAzureCredential()
     return credential
     # # Azure App Service 환경에서는 Managed Identity 또는 Client Secret 사용
     # if os.getenv('WSN'):  # Azure App Service 환경
