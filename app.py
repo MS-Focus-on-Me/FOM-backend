@@ -9,8 +9,11 @@ from sqlalchemy import func
 from convert_diary_format import writer_workflow
 from summary_diary import summary_workflow
 from emotion import request_gpt
+from diary_psy import request_psy
 from dalle_diary import generate_mone_pastel_image
 import json
+import mysql.connector
+from datetime import datetime, timedelta
 # from dalle_diary import generate_mone_pastel_image
 
 
@@ -449,6 +452,97 @@ def create_image(data: ImageData, db: Session = Depends(get_db)):
         "URL": image_url,
         "FILENAME": filename
     }
+
+# # 감정들의 평균
+# def get_db_connection():
+#     # MySQL에 맞게 연결 정보 설정하기
+#     conn = mysql.connector.connect(
+#         host='your_mysql_host',      # 예: 'localhost' 또는 '127.0.0.1'
+#         user='your_mysql_user',      # MySQL Username
+#         password='your_mysql_password', # Password
+#         database='your_database_name'   # 데이터베이스 이름
+#     )
+#     return conn
+
+# @app.get("/feeling/")
+# async def average_emotions():
+#     try:
+#         today = datetime.now()
+#         yesterday = today - timedelta(days=1)
+#         yesterday_start = datetime(yesterday.year, yesterday.month, yesterday.day, 0, 0, 0)
+#         yesterday_end = datetime(yesterday.year, yesterday.month, yesterday.day, 23, 59, 59)
+
+#         conn = get_db_connection()
+#         cursor = conn.cursor(dictionary=True)  # dictionary=True로 설정하면 결과를 딕셔너리 형태로 받음
+
+#         query = """
+#         SELECT
+#             CAST(AVG(joy) AS UNSIGNED) AS joy_avg,
+#             CAST(AVG(sadness) AS UNSIGNED) AS sadness_avg,
+#             CAST(AVG(anger) AS UNSIGNED) AS anger_avg,
+#             CAST(AVG(fear) AS UNSIGNED) AS fear_avg,
+#             CAST(AVG(disgust) AS UNSIGNED) AS disgust_avg,
+#             CAST(AVG(anxiety) AS UNSIGNED) AS anxiety_avg,
+#             CAST(AVG(envy) AS UNSIGNED) AS envy_avg,
+#             CAST(AVG(bewilderment) AS UNSIGNED) AS bewilderment_avg,
+#             CAST(AVG(boredom) AS UNSIGNED) AS boredom_avg
+#         FROM EMOTION
+#         WHERE created_at BETWEEN %s AND %s;
+#         """
+        
+#         cursor.execute(query, (yesterday_start, yesterday_end))
+#         result = cursor.fetchone()
+
+#         # Convert query result to a dictionary, ensuring integers are returned
+#         emotion_averages = {
+#             "joy": result["joy_avg"] or 0,
+#             "sadness": result["sadness_avg"] or 0,
+#             "anger": result["anger_avg"] or 0,
+#             "fear": result["fear_avg"] or 0,
+#             "disgust": result["disgust_avg"] or 0,
+#             "anxiety": result["anxiety_avg"] or 0,
+#             "envy": result["envy_avg"] or 0,
+#             "bewilderment": result["bewilderment_avg"] or 0,
+#             "boredom": result["boredom_avg"] or 0,
+#         }
+        
+#         cursor.close()
+#         conn.close()
+
+#         return emotion_averages
+#     except Exception as e:
+#         return {"error": str(e)}
+
+# 포미가 해주는 공감 한스푼 API
+class PsyInput(BaseModel):
+    user_id: int
+    diary_id: int
+    diary_text: str
+
+@app.post("/api/psy/create")
+async def create_psy(data: PsyInput, db:Session = Depends(get_db)):
+
+    diary_text = data.diary_text
+    fome_result = request_psy(diary_text).get('response')
+
+    print(fome_result)
+    print(type(fome_result))
+
+    new_psy = models.Psy(
+        user_id=data.user_id,  # 여기서 user_id는 특정 사용자로 넣거나, 요청받은 데이터와 연동
+        diary_id=data.diary_id,
+        comment=fome_result,  # 감정 또는 메시지 처리 로직 필요
+    )
+    db.add(new_psy)
+    db.commit()
+    db.refresh(new_psy)
+
+    return {
+        "Fome": fome_result,
+    }
+
+
+
 
 ########## 테스트 ##########
 

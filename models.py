@@ -1,4 +1,4 @@
-from sqlalchemy import Column, Integer, String, DateTime, ForeignKey, Table, Text, BLOB
+from sqlalchemy import Column, Integer, String, DateTime, ForeignKey, Boolean, Table, Text, BLOB
 from sqlalchemy.sql import func
 from database import Base
 
@@ -43,4 +43,12 @@ class Emotion(Base):
     envy = Column(Integer, default=0)
     bewilderment = Column(Integer, default=0)
     boredom = Column(Integer, default=0)
+    created_at = Column(DateTime(timezone=True), server_default=func.now())
+
+class Psy(Base):
+    __tablename__ = 'psy'
+    psy_id = Column(Integer, primary_key=True, index=True, autoincrement=True)
+    user_id = Column(Integer, ForeignKey('users.user_id'), nullable=False)
+    diary_id = Column(Integer, ForeignKey('diary.diary_id'), nullable=False)
+    comment = Column(Text)
     created_at = Column(DateTime(timezone=True), server_default=func.now())
