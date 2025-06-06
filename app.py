@@ -527,7 +527,7 @@ async def create_psy(data: PsyInput, db:Session = Depends(get_db)):
 
     print(fome_result)
     print(type(fome_result))
-    
+
     new_psy = models.Psy(
         user_id=data.user_id,  # 여기서 user_id는 특정 사용자로 넣거나, 요청받은 데이터와 연동
         diary_id=data.diary_id,
@@ -538,7 +538,7 @@ async def create_psy(data: PsyInput, db:Session = Depends(get_db)):
     db.refresh(new_psy)
 
     return {
-        "message": "공감 등록 성공",
+        "Fome": fome_result,
     }
 
 
