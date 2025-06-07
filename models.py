@@ -52,3 +52,10 @@ class Psy(Base):
     diary_id = Column(Integer, ForeignKey('diary.diary_id'), nullable=False)
     comment = Column(Text)
     created_at = Column(DateTime(timezone=True), server_default=func.now())
+
+class ImageSetting(Base):
+    __tablename__ = 'imagesetting'
+    user_id = Column(Integer, ForeignKey('users.user_id'), primary_key=True)
+    nation = Column(String(255))
+    sex = Column(String(255))
+    age = Column(Integer)
