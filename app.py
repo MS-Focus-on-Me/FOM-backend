@@ -182,8 +182,72 @@ async def create_diary(data: DiaryData, db: Session = Depends(get_db)):
     db.add(new_diary)
     db.commit()
     db.refresh(new_diary)
+
+    analysis_result = request_gpt(data.content)
     
-    return {"message": "기록 성공", "diary_id": new_diary.diary_id}
+    response_text = analysis_result.get('response', '')
+
+    json_str = response_text.strip()
+    if json_str.startswith("```json"):
+        json_str = json_str[len("```json"):].strip()
+    if json_str.endswith("```"):
+        json_str = json_str[:-3].strip()
+        
+    if isinstance(analysis_result, dict):
+        try:
+            response_text = analysis_result['response']  # 문자열 추출
+
+            # "```json"과 "```" 문자를 제거하여 JSON 문자열만 추출
+            json_str = response_text.strip()
+            if json_str.startswith("```json"):
+                json_str = json_str[len("```json"):].strip()
+            if json_str.endswith("```"):
+                json_str = json_str[:-3].strip()
+
+            # JSON 문자열을 딕셔너리로 로드
+            json_data = json.loads(json_str)
+            first_item = json_data[0]  # 리스트의 첫 번째 요소
+            emotions = first_item['감정']
+
+            joy = emotions.get("기쁨", 0)
+            sadness = emotions.get("슬픔", 0)
+            anger = emotions.get("분노", 0)
+            fear = emotions.get("공포", 0)
+            disgust = emotions.get("혐오", 0)
+            anxiety = emotions.get("불안", 0)
+            envy = emotions.get("부러움", 0)
+            bewilderment = emotions.get("당황", 0)
+            boredom = emotions.get("따분", 0)
+
+        except Exception as e:
+            print("파싱 에러:", e)
+            joy = sadness = anger = fear = disgust = anxiety = envy = bewilderment = boredom = 0
+
+        # 감정 저장
+        new_emotion = models.Emotion(
+            user_id=data.user_id,
+            diary_id=new_diary.diary_id,
+            joy=joy,
+            sadness=sadness,
+            anger=anger,
+            fear=fear,
+            disgust=disgust,
+            anxiety=anxiety,
+            envy=envy,
+            bewilderment=bewilderment,
+            boredom=boredom
+        )
+
+        db.add(new_emotion)
+        db.commit()
+        db.refresh(new_emotion)
+
+    else:
+        raise HTTPException(status_code=400, detail="감정 분석 실패 또는 유효하지 않은 결과입니다.")
+
+    ## 여기다가 작성하겠죠 그 감정분석을
+    
+    return {"message": "일기 기록 및 감정 분석 성공", "diary_id": new_diary.diary_id}
 
 # 일기 조회 (데이트 정보를 리엑트에서 받아옴)
     # 데이트 인포를 리엑트에서 받아오면 해당하는 날짜의 일기를 조회
