@@ -5,7 +5,6 @@ from autogen_agentchat.teams import RoundRobinGroupChat
 from autogen_ext.models.openai import AzureOpenAIChatCompletionClient
 import os
 from dotenv import load_dotenv
-# pip install git+https://github.com/microsoft/autogen.git openai azure-identity
 
 load_dotenv()
 

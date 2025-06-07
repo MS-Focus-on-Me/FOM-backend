@@ -6,8 +6,6 @@ from dotenv import load_dotenv
 
 load_dotenv()
 
-
-
 def generate_mone_pastel_image(diary_text):
 
     nation = "대한민국"

@@ -1,21 +1,21 @@
+import models, os, uvicorn, json, mysql.connector
 from fastapi import FastAPI, HTTPException, Depends, Request
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 from database import SessionLocal
-import models, os, uvicorn
 from sqlalchemy.orm import Session
 from datetime import date, datetime
 from sqlalchemy import func
-from convert_diary_format import writer_workflow
-from summary_diary import summary_workflow
-from emotion import request_gpt
-from diary_psy import request_psy
-from dalle_diary import generate_mone_pastel_image
-import json
-import mysql.connector
 from datetime import datetime, timedelta
-# from dalle_diary import generate_mone_pastel_image
+from dotenv import load_dotenv
 
+from service.convert_diary_format import writer_workflow
+from service.summary_diary import summary_workflow
+from service.emotion import request_gpt
+from service.diary_psy import request_psy
+from service.dalle_diary import generate_mone_pastel_image
+
+load_dotenv()
 
 app = FastAPI()
 
@@ -453,65 +453,66 @@ def create_image(data: ImageData, db: Session = Depends(get_db)):
         "FILENAME": filename
     }
 
-# # 감정들의 평균
-# def get_db_connection():
-#     # MySQL에 맞게 연결 정보 설정하기
-#     conn = mysql.connector.connect(
-#         host='your_mysql_host',      # 예: 'localhost' 또는 '127.0.0.1'
-#         user='your_mysql_user',      # MySQL Username
-#         password='your_mysql_password', # Password
-#         database='your_database_name'   # 데이터베이스 이름
-#     )
-#     return conn
+# 감정들의 평균
+# os.getenv('autogen_api_key')
+def get_db_connection():
+    # MySQL에 맞게 연결 정보 설정하기
+    conn = mysql.connector.connect(
+        host=os.getenv('DB_HOST'),
+        user=os.getenv('DB_USER'),      # MySQL Username
+        password=os.getenv('DB_PASSWORD'), # Password
+        database=os.getenv('DB_DATABASE')   # 데이터베이스 이름
+    )
+    return conn
 
-# @app.get("/feeling/")
-# async def average_emotions():
-#     try:
-#         today = datetime.now()
-#         yesterday = today - timedelta(days=1)
-#         yesterday_start = datetime(yesterday.year, yesterday.month, yesterday.day, 0, 0, 0)
-#         yesterday_end = datetime(yesterday.year, yesterday.month, yesterday.day, 23, 59, 59)
+@app.get("/api/feeling/")
+async def average_emotions():
+    try:
+        today = datetime.now()
+        yesterday = today - timedelta(days=1)
+        yesterday_start = datetime(yesterday.year, yesterday.month, yesterday.day, 0, 0, 0)
+        yesterday_end = datetime(yesterday.year, yesterday.month, yesterday.day, 23, 59, 59)
 
-#         conn = get_db_connection()
-#         cursor = conn.cursor(dictionary=True)  # dictionary=True로 설정하면 결과를 딕셔너리 형태로 받음
+        conn = get_db_connection()
+        cursor = conn.cursor(dictionary=True)  # dictionary=True로 설정하면 결과를 딕셔너리 형태로 받음
 
-#         query = """
-#         SELECT
-#             CAST(AVG(joy) AS UNSIGNED) AS joy_avg,
-#             CAST(AVG(sadness) AS UNSIGNED) AS sadness_avg,
-#             CAST(AVG(anger) AS UNSIGNED) AS anger_avg,
-#             CAST(AVG(fear) AS UNSIGNED) AS fear_avg,
-#             CAST(AVG(disgust) AS UNSIGNED) AS disgust_avg,
-#             CAST(AVG(anxiety) AS UNSIGNED) AS anxiety_avg,
-#             CAST(AVG(envy) AS UNSIGNED) AS envy_avg,
-#             CAST(AVG(bewilderment) AS UNSIGNED) AS bewilderment_avg,
-#             CAST(AVG(boredom) AS UNSIGNED) AS boredom_avg
-#         FROM EMOTION
-#         WHERE created_at BETWEEN %s AND %s;
-#         """
+        query = """
+        SELECT
+            CAST(AVG(joy) AS UNSIGNED) AS joy_avg,
+            CAST(AVG(sadness) AS UNSIGNED) AS sadness_avg,
+            CAST(AVG(anger) AS UNSIGNED) AS anger_avg,
+            CAST(AVG(fear) AS UNSIGNED) AS fear_avg,
+            CAST(AVG(disgust) AS UNSIGNED) AS disgust_avg,
+            CAST(AVG(anxiety) AS UNSIGNED) AS anxiety_avg,
+            CAST(AVG(envy) AS UNSIGNED) AS envy_avg,
+            CAST(AVG(bewilderment) AS UNSIGNED) AS bewilderment_avg,
+            CAST(AVG(boredom) AS UNSIGNED) AS boredom_avg
+        FROM EMOTIONS
+        WHERE created_at BETWEEN %s AND %s;
+        """
         
-#         cursor.execute(query, (yesterday_start, yesterday_end))
-#         result = cursor.fetchone()
+        cursor.execute(query, (yesterday_start, yesterday_end))
+        result = cursor.fetchone()
 
-#         # Convert query result to a dictionary, ensuring integers are returned
-#         emotion_averages = {
-#             "joy": result["joy_avg"] or 0,
-#             "sadness": result["sadness_avg"] or 0,
-#             "anger": result["anger_avg"] or 0,
-#             "fear": result["fear_avg"] or 0,
-#             "disgust": result["disgust_avg"] or 0,
-#             "anxiety": result["anxiety_avg"] or 0,
-#             "envy": result["envy_avg"] or 0,
-#             "bewilderment": result["bewilderment_avg"] or 0,
-#             "boredom": result["boredom_avg"] or 0,
-#         }
+        # Convert query result to a dictionary, ensuring integers are returned
+        emotion_averages = {
+            "joy": result["joy_avg"] or 0,
+            "sadness": result["sadness_avg"] or 0,
+            "anger": result["anger_avg"] or 0,
+            "fear": result["fear_avg"] or 0,
+            "disgust": result["disgust_avg"] or 0,
+            "anxiety": result["anxiety_avg"] or 0,
+            "envy": result["envy_avg"] or 0,
+            "bewilderment": result["bewilderment_avg"] or 0,
+            "boredom": result["boredom_avg"] or 0,
+        }
         
-#         cursor.close()
-#         conn.close()
+        cursor.close()
+        conn.close()
 
-#         return emotion_averages
-#     except Exception as e:
-#         return {"error": str(e)}
+        return emotion_averages
+    except Exception as e:
+        return {"error": str(e)}
 
 # 포미가 해주는 공감 한스푼 API
 class PsyInput(BaseModel):
@@ -540,9 +541,6 @@ async def create_psy(data: PsyInput, db:Session = Depends(get_db)):
     return {
         "Fome": fome_result,
     }
-
-
-
 
 ########## 테스트 ##########
 
