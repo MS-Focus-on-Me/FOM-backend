@@ -13,6 +13,7 @@ def generate_mone_pastel_image(diary_text):
     prompt = f"""{diary_text} 이 일기에 나오는 풍경 중 하나를 vivid하지 않은 파스텔톤의 초등학교 4학년 그림으로 그려줘. 그리고 글씨는 안 나오게 그림만 나오게 해줘. 
     나는 {nation} 국적이야. 이미지를 생성할 때는 내 국적과 문화권을 반영한 내용으로 생성해줘."""
 
+    # 
     api_key = os.getenv("DALLE_API_KEY")
     endpoint = os.getenv("DALLE_ENDPOINT")
     deployment = os.getenv("DALLE_DEPLOYMENT")

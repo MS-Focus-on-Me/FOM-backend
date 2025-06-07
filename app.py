@@ -343,7 +343,11 @@ async def get_user_email(user_id: int, db: Session = Depends(get_db)):
     user = db.query(models.User).filter(models.User.user_id == user_id).first()
     if not user:
         raise HTTPException(status_code=404, detail="유저를 찾을 수 없음")
-    return {"email": user.email}
+    user_data = {
+        "user_id": user.user_id,
+        "reference_text": user.reference_text
+    }
+    return user_data
 
 # reference 선택
 class ReferenceData(BaseModel):
@@ -361,97 +365,6 @@ async def select_reference(user_id: int, data: ReferenceData, db: Session = Depe
     
     db.commit()
     return {"message": "reference 수정 성공"}
-
-# 일기 감정 분석
-class DiaryInput(BaseModel):
-    user_id: int
-    diary_id: int
-    diary_text: str
-
-@app.post("/api/emotion/create")
-async def create_emotion(data: DiaryInput, db:Session = Depends(get_db)):
-    diary = db.query(models.Diary).filter(models.Diary.diary_id == data.diary_id).first()
-
-    # 일기 텍스트
-    diary_text = data.diary_text
-    
-    # 감정 분석
-    analysis_result = request_gpt(diary_text)
-    
-    response_text = analysis_result.get('response', '')
-    # response_text = analysis_result['response']
-
-    json_str = response_text.strip()
-    if json_str.startswith("```json"):
-        json_str = json_str[len("```json"):].strip()
-    if json_str.endswith("```"):
-        json_str = json_str[:-3].strip()
-        
-    if isinstance(analysis_result, dict):
-        try:
-            response_text = analysis_result['response']  # 문자열 추출
-
-            # "```json"과 "```" 문자를 제거하여 JSON 문자열만 추출
-            json_str = response_text.strip()
-            if json_str.startswith("```json"):
-                json_str = json_str[len("```json"):].strip()
-            if json_str.endswith("```"):
-                json_str = json_str[:-3].strip()
-
-            # JSON 문자열을 딕셔너리로 로드
-            json_data = json.loads(json_str)
-            first_item = json_data[0]  # 리스트의 첫 번째 요소
-            emotions = first_item['감정']
-
-            joy = emotions.get("기쁨", 0)
-            sadness = emotions.get("슬픔", 0)
-            anger = emotions.get("분노", 0)
-            fear = emotions.get("공포", 0)
-            disgust = emotions.get("혐오", 0)
-            anxiety = emotions.get("불안", 0)
-            envy = emotions.get("부러움", 0)
-            bewilderment = emotions.get("당황", 0)
-            boredom = emotions.get("따분", 0)
-
-        except Exception as e:
-            print("파싱 에러:", e)
-            joy = sadness = anger = fear = disgust = anxiety = envy = bewilderment = boredom = 0
-
-        # 감정 저장
-        new_emotion = models.Emotion(
-            user_id=data.user_id,
-            diary_id=diary.diary_id,
-            joy=joy,
-            sadness=sadness,
-            anger=anger,
-            fear=fear,
-            disgust=disgust,
-            anxiety=anxiety,
-            envy=envy,
-            bewilderment=bewilderment,
-            boredom=boredom
-        )
-
-        db.add(new_emotion)
-        db.commit()
-        db.refresh(new_emotion)
-
-        return {
-            "diary_text": diary_text,
-            "emotions": {
-                "기쁨": joy,
-                "슬픔": sadness,
-                "분노": anger,
-                "공포": fear,
-                "혐오": disgust,
-                "불안": anxiety,
-                "부러움": envy,
-                "당황": bewilderment,
-                "따분": boredom
-            }
-        }
-    else:
-        raise HTTPException(status_code=400, detail="감정 분석 실패 또는 유효하지 않은 결과입니다.")
 
 # 감정 조회
 @app.get("/api/emotion/read")
@@ -605,6 +518,37 @@ async def create_psy(data: PsyInput, db:Session = Depends(get_db)):
     return {
         "Fome": fome_result,
     }
+
+class ImageSettingData(BaseModel):
+    user_id: int
+    nation: str
+    sex: str
+    age: int
+
+@app.put("/api/image/setting")
+async def input_image_setting(data: ImageSettingData, db: Session = Depends(get_db)):
+    existing_setting = db.query(models.ImageSetting).filter(models.ImageSetting.user_id == data.user_id).first()
+
+    if existing_setting:
+        # 이미 존재하면 업데이트
+        existing_setting.nation = data.nation
+        existing_setting.sex = data.sex
+        existing_setting.age = data.age
+        db.commit()
+        db.refresh(existing_setting)
+        return {"message": "설정이 업데이트 되었습니다.", "setting": existing_setting}
+    else:
+        # 없으면 새로 생성
+        new_image_setting = models.ImageSetting(
+            user_id=data.user_id,
+            nation=data.nation,
+            sex=data.sex,
+            age=data.age
+        )
+        db.add(new_image_setting)
+        db.commit()
+        db.refresh(new_image_setting)
+        return {"message": "새 설정이 저장되었습니다.", "setting": new_image_setting}
 
 ########## 테스트 ##########
 
