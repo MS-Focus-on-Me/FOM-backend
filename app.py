@@ -250,21 +250,47 @@ async def create_diary(data: DiaryData, db: Session = Depends(get_db)):
     return {"message": "일기 기록 및 감정 분석 성공", "diary_id": new_diary.diary_id}
 
 # 일기 조회 (데이트 정보를 리엑트에서 받아옴)
-    # 데이트 인포를 리엑트에서 받아오면 해당하는 날짜의 일기를 조회
-    # 리엑트에서 받아온 날짜 (예: 2025-05-25)
+# 데이트 인포를 리엑트에서 받아오면 해당하는 날짜의 일기를 조회
+# 리엑트에서 받아온 날짜 (예: 2025-05-25)
+##### 여기 selected_date 형식 바꿔서 파싱해서 그 날짜에 해당하는 일기들만 가져오게 수정 #####
+
+from datetime import datetime, timedelta
+
 @app.get("/api/diary/read")
 async def read_diary_by_date(user_id: int, selected_date: str, db: Session = Depends(get_db)):
-    target_date = datetime.strptime(selected_date, "%Y-%m-%d").date()
+    # 문자열 길이 검증 및 쪼개기
+    if len(selected_date) != 12:
+        raise HTTPException(status_code=400, detail="날짜 문자열이 올바른 길이가 아닙니다.")
 
+    start_str = selected_date[:6]  # 처음 6자리, 예: "250602"
+    end_str = selected_date[6:]    # 이후 6자리, 예: "250607"
+
+    # 문자열을 날짜로 변환
+    try:
+        start_date = datetime.strptime(start_str, "%y%m%d")
+        end_date = datetime.strptime(end_str, "%y%m%d")
+    except Exception:
+        raise HTTPException(status_code=400, detail="날짜 형식이 올바르지 않습니다.")
+
+    # 종료일은 시작일보다 크거나 같아야 함
+    if end_date < start_date:
+        raise HTTPException(status_code=400, detail="종료 날짜가 시작 날짜보다 이전입니다.")
+
+    # 종료 날짜 + 1일로 설정해서 range 처리
+    end_date_inclusive = end_date + timedelta(days=1)
+
+    # 날짜 범위 내 일기 조회
     diary_entries = db.query(models.Diary).filter(
         models.Diary.user_id == user_id,
-        func.date(models.Diary.created_at) == target_date
+        func.date(models.Diary.created_at) >= start_date,
+        func.date(models.Diary.created_at) < end_date_inclusive
     ).all()
 
     if not diary_entries:
         return {"message": "일기가 없습니다."}
 
     return diary_entries
+
 
 # 일기 삭제
 @app.delete("/api/diary/delete")
