@@ -1,4 +1,4 @@
-from sqlalchemy import Column, Integer, String, DateTime, ForeignKey, Boolean, Table, Text, BLOB
+from sqlalchemy import Column, Integer, String, DateTime, ForeignKey, Boolean, Table, Text, BLOB, event
 from sqlalchemy.sql import func
 from database import Base
 
@@ -59,3 +59,23 @@ class ImageSetting(Base):
     nation = Column(String(255))
     sex = Column(String(255))
     age = Column(Integer)
+
+class ShareDiary(Base):
+    __tablename__ = 'sharediary'
+    share_diary_id = Column(Integer, primary_key=True, index=True)
+    diary_id = Column(Integer, ForeignKey('diary.diary_id', ondelete='CASCADE'))
+    user_id = Column(Integer, ForeignKey('users.user_id', ondelete='CASCADE'))
+    photo = Column(String(2048))
+    content = Column(Text)
+    flag = Column(Boolean, default=False)
+    created_at = Column(DateTime)
+
+# diary의 photo가 업데이트 되면 자동으로 share_diary의 photo가 업데이트
+# @event.listens_for(Diary, 'after_update')
+# def update_share_diary_photo(connection, target):
+#     # target은 업데이트된 Diary 인스턴스
+#     connection.execute(
+#         ShareDiary.__table__.update()
+#         .where(ShareDiary.diary_id == target.diary_id)
+#         .values(photo=target.photo)
+#     )

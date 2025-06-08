@@ -253,10 +253,21 @@ async def create_diary(data: DiaryData, db: Session = Depends(get_db)):
 # 데이트 인포를 리엑트에서 받아오면 해당하는 날짜의 일기를 조회
 # 리엑트에서 받아온 날짜 (예: 2025-05-25)
 ##### 여기 selected_date 형식 바꿔서 파싱해서 그 날짜에 해당하는 일기들만 가져오게 수정 #####
-
-from datetime import datetime, timedelta
-
 @app.get("/api/diary/read")
+async def read_diary_by_date(user_id: int, selected_date: str, db: Session = Depends(get_db)):
+    target_date = datetime.strptime(selected_date, "%Y-%m-%d").date()
+
+    diary_entries = db.query(models.Diary).filter(
+        models.Diary.user_id == user_id,
+        func.date(models.Diary.created_at) == target_date
+    ).all()
+
+    if not diary_entries:
+        return {"message": "일기가 없습니다."}
+
+    return diary_entries
+
+@app.get("/api/diary/read_mte")
 async def read_diary_by_date(user_id: int, selected_date: str, db: Session = Depends(get_db)):
     # 문자열 길이 검증 및 쪼개기
     if len(selected_date) != 12:
@@ -290,7 +301,6 @@ async def read_diary_by_date(user_id: int, selected_date: str, db: Session = Dep
         return {"message": "일기가 없습니다."}
 
     return diary_entries
-
 
 # 일기 삭제
 @app.delete("/api/diary/delete")
@@ -575,6 +585,70 @@ async def input_image_setting(data: ImageSettingData, db: Session = Depends(get_
         db.commit()
         db.refresh(new_image_setting)
         return {"message": "새 설정이 저장되었습니다.", "setting": new_image_setting}
+    
+
+# 일기 공유 요청 및 share_diary에 저장
+class ShareDiaryData(BaseModel):
+    diary_id: int
+    created_at: datetime
+
+@app.post("/api/share_diary/create")
+async def share_diary(data: ShareDiaryData, db: Session = Depends(get_db)):
+    diary = db.query(models.Diary).filter(models.Diary.diary_id == data.diary_id).first()
+    if not diary:
+        raise HTTPException(status_code=404, detail="일기를 찾을 수 없음")
+    
+    # 존재하지 않는 일기를 공유하지 않도록
+    existing_shared = db.query(models.ShareDiary).filter(models.ShareDiary.diary_id == data.diary_id).first()
+    if existing_shared:
+        existing_shared.flag = True  # 공유로 설정
+        db.commit()
+        return {"message": "일기가 이미 공유되고 있음"}
+    
+    # 새로운 ShareDiary 항목 생성
+    shared_diary = models.ShareDiary(
+        diary_id=data.diary_id,
+        user_id=diary.user_id,  # 또는 다른 사용자 기준 (sharing 주체)
+        photo=diary.photo,
+        content=diary.content,
+        created_at=data.created_at,
+        flag=True
+    )
+    
+    db.add(shared_diary)
+    db.commit()
+    db.refresh(shared_diary)
+    
+    return {
+        "message": "일기가 성공적으로 공유되었습니다.",
+        "share_diary_id": shared_diary.share_diary_id
+    }
+
+@app.get("/api/shared_diaries/get")
+async def get_shared_diaries(db: Session = Depends(get_db)):
+    # 오늘 날짜
+    today = date.today()
+    # 어제 날짜
+    yesterday = today - timedelta(days=1)
+
+    # end_date 하루 더해서 범위 끝에 포함
+    end_dt_inclusive = today + timedelta(days=1)
+
+    shared_diaries = db.query(models.ShareDiary).filter(
+        models.ShareDiary.flag == True,
+        models.ShareDiary.created_at >= yesterday,
+        models.ShareDiary.created_at < end_dt_inclusive
+    ).all()
+
+    result = [
+        {
+            "photo": diary.photo,
+            "content": diary.content
+        }
+        for diary in shared_diaries
+    ]
+
+    return result
 
 ########## 테스트 ##########
 
