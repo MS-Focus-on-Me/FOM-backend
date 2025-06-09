@@ -176,12 +176,16 @@ async def create_diary(data: DiaryData, db: Session = Depends(get_db)):
         models.Diary.created_at <= today_end
     ).first()
 
+    print("중간 점검 1")
+
     if existing_diary:
-        existing_diary.content=data.content,
-        existing_diary.created_at=data.created_at,
+        existing_diary.content=data.content
+        existing_diary.created_at=data.created_at
         existing_diary.summary=diary_summary
         db.commit()
-        db.refresh()
+        db.refresh(existing_diary)
+        diary_id = existing_diary.diary_id
+        print("중간 점검 2")
     else:
         # 새로운 diary 생성
         new_diary = models.Diary(
@@ -190,14 +194,19 @@ async def create_diary(data: DiaryData, db: Session = Depends(get_db)):
             created_at=data.created_at,
             summary=diary_summary
         )
+        print("중간 점검 3")
 
         db.add(new_diary)
         db.commit()
         db.refresh(new_diary)
+        diary_id = new_diary.diary_id
+        print("중간 점검 4")
 
     analysis_result = request_gpt(data.content)
     
     response_text = analysis_result.get('response', '')
+
+    print("############중간점검############")
 
     json_str = response_text.strip()
     if json_str.startswith("```json"):
@@ -236,7 +245,7 @@ async def create_diary(data: DiaryData, db: Session = Depends(get_db)):
             joy = sadness = anger = fear = disgust = anxiety = envy = bewilderment = boredom = 0
 
         # 기존 감정이 있는지 조회
-        existing_emotion = db.query(models.Emotion).filter(models.Emotion.diary_id == new_diary.diary_id).first()
+        existing_emotion = db.query(models.Emotion).filter(models.Emotion.diary_id == models.Diary.diary_id).first()
 
         if existing_emotion:
             # 이미 존재하면 업데이트
@@ -255,7 +264,7 @@ async def create_diary(data: DiaryData, db: Session = Depends(get_db)):
             # 없으면 새로 생성
             new_emotion = models.Emotion(
                 user_id=data.user_id,
-                diary_id=new_diary.diary_id,
+                diary_id=new_diary.diary_id | existing_emotion.diary_id,
                 joy=joy,
                 sadness=sadness,
                 anger=anger,
@@ -272,7 +281,7 @@ async def create_diary(data: DiaryData, db: Session = Depends(get_db)):
     else:
         raise HTTPException(status_code=400, detail="감정 분석 실패 또는 유효하지 않은 결과입니다.")
     
-    return {"message": "일기 기록 및 감정 분석 성공", "diary_id": new_diary.diary_id}
+    return {"message": "일기 기록 및 감정 분석 성공", "diary_id": diary_id}
 
 # 일기 조회 (데이트 정보를 리엑트에서 받아옴)
 # 데이트 인포를 리엑트에서 받아오면 해당하는 날짜의 일기를 조회
@@ -696,6 +705,8 @@ async def get_shared_diaries(db: Session = Depends(get_db)):
     ]
 
     return result
+
+
 
 ########## 테스트 ##########
 
