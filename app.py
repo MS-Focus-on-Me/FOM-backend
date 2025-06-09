@@ -151,18 +151,13 @@ async def delete_temp_diary(temp_diary_id: int, db: Session = Depends(get_db)):
 
     return {"message": "기록 삭제 성공"}
 
-# 예시
-@app.get("/api/diary/hyunji")
-async def read_diary():
-    return "hi"
-
 # 일기 작성
 class DiaryData(BaseModel):
     user_id: int
     content: str
     created_at: datetime
 
-@app.post("/api/diary/create")
+@app.put("/api/diary/create")
 async def create_diary(data: DiaryData, db: Session = Depends(get_db)):
     user = db.query(models.User).filter(models.User.user_id == data.user_id).first()
 
@@ -171,17 +166,34 @@ async def create_diary(data: DiaryData, db: Session = Depends(get_db)):
     
     diary_summary = await summary_workflow(data.content)
 
-    # 새로운 diary 생성
-    new_diary = models.Diary(
-        user_id=user.user_id,
-        content=data.content,
-        created_at=data.created_at,
-        summary=diary_summary
-    )
+    today_start = datetime.combine(date.today(), datetime.min.time())  # 오늘 00:00:00
+    today_end = datetime.combine(date.today(), datetime.max.time())    # 오늘 23:59:59.999999
 
-    db.add(new_diary)
-    db.commit()
-    db.refresh(new_diary)
+    # 오늘 등록된 일기 있는지 검색
+    existing_diary = db.query(models.Diary).filter(
+        models.Diary.user_id == data.user_id,
+        models.Diary.created_at >= today_start,
+        models.Diary.created_at <= today_end
+    ).first()
+
+    if existing_diary:
+        existing_diary.content=data.content,
+        existing_diary.created_at=data.created_at,
+        existing_diary.summary=diary_summary
+        db.commit()
+        db.refresh()
+    else:
+        # 새로운 diary 생성
+        new_diary = models.Diary(
+            user_id=user.user_id,
+            content=data.content,
+            created_at=data.created_at,
+            summary=diary_summary
+        )
+
+        db.add(new_diary)
+        db.commit()
+        db.refresh(new_diary)
 
     analysis_result = request_gpt(data.content)
     
@@ -223,29 +235,42 @@ async def create_diary(data: DiaryData, db: Session = Depends(get_db)):
             print("파싱 에러:", e)
             joy = sadness = anger = fear = disgust = anxiety = envy = bewilderment = boredom = 0
 
-        # 감정 저장
-        new_emotion = models.Emotion(
-            user_id=data.user_id,
-            diary_id=new_diary.diary_id,
-            joy=joy,
-            sadness=sadness,
-            anger=anger,
-            fear=fear,
-            disgust=disgust,
-            anxiety=anxiety,
-            envy=envy,
-            bewilderment=bewilderment,
-            boredom=boredom
-        )
+        # 기존 감정이 있는지 조회
+        existing_emotion = db.query(models.Emotion).filter(models.Emotion.diary_id == new_diary.diary_id).first()
 
-        db.add(new_emotion)
-        db.commit()
-        db.refresh(new_emotion)
-
+        if existing_emotion:
+            # 이미 존재하면 업데이트
+            existing_emotion.joy = joy
+            existing_emotion.sadness = sadness
+            existing_emotion.anger = anger
+            existing_emotion.fear = fear
+            existing_emotion.disgust = disgust
+            existing_emotion.anxiety = anxiety
+            existing_emotion.envy = envy
+            existing_emotion.bewilderment = bewilderment
+            existing_emotion.boredom = boredom
+            db.commit()
+            db.refresh(existing_emotion)
+        else:
+            # 없으면 새로 생성
+            new_emotion = models.Emotion(
+                user_id=data.user_id,
+                diary_id=new_diary.diary_id,
+                joy=joy,
+                sadness=sadness,
+                anger=anger,
+                fear=fear,
+                disgust=disgust,
+                anxiety=anxiety,
+                envy=envy,
+                bewilderment=bewilderment,
+                boredom=boredom
+            )
+            db.add(new_emotion)
+            db.commit()
+            db.refresh(new_emotion)
     else:
         raise HTTPException(status_code=400, detail="감정 분석 실패 또는 유효하지 않은 결과입니다.")
-
-    ## 여기다가 작성하겠죠 그 감정분석을
     
     return {"message": "일기 기록 및 감정 분석 성공", "diary_id": new_diary.diary_id}
 
@@ -377,11 +402,16 @@ async def update_user(user_id: int, data: UpdateUserInfo, db: Session = Depends(
 @app.get("/api/users/{user_id}")
 async def get_user_email(user_id: int, db: Session = Depends(get_db)):
     user = db.query(models.User).filter(models.User.user_id == user_id).first()
+    imgsetting = db.query(models.ImageSetting).filter(models.ImageSetting.user_id == user_id).first()
     if not user:
         raise HTTPException(status_code=404, detail="유저를 찾을 수 없음")
     user_data = {
         "user_id": user.user_id,
-        "reference_text": user.reference_text
+        "reference_text": user.reference_text,
+        "email": user.email,
+        "nation": imgsetting.nation,
+        "sex": imgsetting.sex,
+        "age": imgsetting.age
     }
     return user_data
 
@@ -404,36 +434,54 @@ async def select_reference(user_id: int, data: ReferenceData, db: Session = Depe
 
 # 감정 조회
 @app.get("/api/emotion/read")
-def get_latest_emotion(user_id: int, diary_id: int, db: Session = Depends(get_db)):
+def get_latest_emotion(user_id: int, selected_date: str, db: Session = Depends(get_db)):
     # 가장 최근 생성된 emotion 검색
-    user = db.query(models.User).filter(models.User.user_id == user_id).first()
-
-    emotion = (
-        db.query(models.Emotion)
-        .filter(models.Emotion.user_id == user_id, models.Emotion.diary_id == diary_id)
-        .order_by(models.Emotion.created_at.desc())
-        .first()
-    )
-
-    if not emotion:
-        raise HTTPException(status_code=404, detail="감정 기록이 없습니다.")
+    if len(selected_date) != 12:
+        raise HTTPException(status_code=400, detail="날짜 문자열이 올바른 길이가 아닙니다.")
     
-    # 반환할 데이터 구성을 딕셔너리로 만들어서 반환
-    return {
-        "emotion_id": emotion.emotion_id,
-        "user_id": emotion.user_id,
-        "diary_id": emotion.diary_id,
-        "joy": emotion.joy,
-        "sadness": emotion.sadness,
-        "anger": emotion.anger,
-        "fear": emotion.fear,
-        "disgust": emotion.disgust,
-        "anxiety": emotion.anxiety,
-        "envy": emotion.envy,
-        "bewilderment": emotion.bewilderment,
-        "boredom": emotion.boredom,
-        "created_at": emotion.created_at
-    }
+    # 날짜 문자열 분리
+    start_str = selected_date[:6]
+    end_str = selected_date[6:]
+
+    try:
+        start_date = datetime.strptime(start_str, "%y%m%d")
+        end_date = datetime.strptime(end_str, "%y%m%d")
+    except Exception:
+        raise HTTPException(status_code=400, detail="날짜 형식이 올바르지 않습니다.")
+    
+    if end_date < start_date:
+        raise HTTPException(status_code=400, detail="종료 날짜가 시작 날짜보다 이전입니다.")
+    
+    end_date_inclusive = end_date + timedelta(days=1)
+
+    emotions = db.query(models.Emotion).filter(
+        models.Emotion.user_id == user_id,
+        models.Emotion.created_at >= start_date,
+        models.Emotion.created_at < end_date_inclusive
+    ).all()
+
+    if not emotions:
+        raise HTTPException(status_code=404, detail="감정들이 없습니다.")
+    
+    result = []
+    for emotion in emotions:
+        result.append({
+            "emotion_id": emotion.emotion_id,
+            "user_id": emotion.user_id,
+            "diary_id": emotion.diary_id,
+            "joy": emotion.joy,
+            "sadness": emotion.sadness,
+            "anger": emotion.anger,
+            "fear": emotion.fear,
+            "disgust": emotion.disgust,
+            "anxiety": emotion.anxiety,
+            "envy": emotion.envy,
+            "bewilderment": emotion.bewilderment,
+            "boredom": emotion.boredom,
+            "created_at": emotion.created_at
+        })
+    
+    return result
 
 # 일기 이미지 생성
 class ImageData(BaseModel):
@@ -467,7 +515,6 @@ def create_image(data: ImageData, db: Session = Depends(get_db)):
     }
 
 # 감정들의 평균
-# os.getenv('autogen_api_key')
 def get_db_connection():
     # MySQL에 맞게 연결 정보 설정하기
     conn = mysql.connector.connect(
@@ -561,6 +608,7 @@ class ImageSettingData(BaseModel):
     sex: str
     age: int
 
+# 이미지 생성 프롬프트 설정
 @app.put("/api/image/setting")
 async def input_image_setting(data: ImageSettingData, db: Session = Depends(get_db)):
     existing_setting = db.query(models.ImageSetting).filter(models.ImageSetting.user_id == data.user_id).first()
@@ -585,7 +633,6 @@ async def input_image_setting(data: ImageSettingData, db: Session = Depends(get_
         db.commit()
         db.refresh(new_image_setting)
         return {"message": "새 설정이 저장되었습니다.", "setting": new_image_setting}
-    
 
 # 일기 공유 요청 및 share_diary에 저장
 class ShareDiaryData(BaseModel):
