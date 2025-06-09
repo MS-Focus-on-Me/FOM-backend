@@ -33,7 +33,7 @@ class Emotion(Base):
     __tablename__ = 'emotions'
     emotion_id = Column(Integer, primary_key=True, index=True, autoincrement=True)
     user_id = Column(Integer, ForeignKey('users.user_id'), nullable=False)
-    diary_id = Column(Integer, ForeignKey('diary.diary_id'), nullable=False)
+    diary_id = Column(Integer, ForeignKey('diary.diary_id', ondelete='CASCADE'), nullable=False)
     joy = Column(Integer, default=0)
     sadness = Column(Integer, default=0)
     anger = Column(Integer, default=0)
@@ -49,7 +49,7 @@ class Psy(Base):
     __tablename__ = 'psy'
     psy_id = Column(Integer, primary_key=True, index=True, autoincrement=True)
     user_id = Column(Integer, ForeignKey('users.user_id'), nullable=False)
-    diary_id = Column(Integer, ForeignKey('diary.diary_id'), nullable=False)
+    diary_id = Column(Integer, ForeignKey('diary.diary_id', ondelete='CASCADE'), nullable=False)
     comment = Column(Text)
     created_at = Column(DateTime(timezone=True), server_default=func.now())
 
