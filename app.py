@@ -6,7 +6,8 @@ from database import SessionLocal
 from sqlalchemy.orm import Session
 from datetime import date, datetime
 from sqlalchemy import func, asc
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
+import pytz
 from dotenv import load_dotenv
 
 from service.convert_diary_format import writer_workflow
@@ -105,13 +106,16 @@ async def create_temp_diary(data: TempDiaryData, db: Session = Depends(get_db)):
 @app.get("/api/temp_diary/read")
 async def read_temp_diary(user_id: int, db: Session = Depends(get_db)):
     
-    today = date.today()  # 오늘 날짜 (예: 2025-05-25)
+    # today = date.today()  # 오늘 날짜 (예: 2025-05-25)
+    kst = pytz.timezone('Asia/Seoul')
+    now_kst = datetime.now(kst)
+    today = now_kst.date()
     # 오늘 date와 동일한 날짜의 기록들 쿼리
     diaries_today = db.query(models.TempDiary).filter(
         models.TempDiary.user_id == user_id,
         func.date(models.TempDiary.created_at) == today
     ).all()
-
+    print(today)
     return diaries_today
 
 # 기록 수정
