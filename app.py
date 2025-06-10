@@ -729,6 +729,21 @@ async def share_diary(data: ShareDiaryData, db: Session = Depends(get_db)):
         "share_diary_id": shared_diary.share_diary_id
     }
 
+@app.put("/api/image/delete/{diary_id}")
+async def image_delete(diary_id: int, db: Session = Depends(get_db)):
+    diary = db.query(models.Diary).filter(models.Diary.diary_id == diary_id).first()
+    if not diary:
+        raise HTTPException(status_code=404, detail="일기를 찾을 수 없음")
+    diary.photo = None
+    
+    # 해당 diary_id를 참조하는 ShareDiary 삭제
+    db.query(models.ShareDiary).filter(models.ShareDiary.diary_id == diary_id).delete()
+
+    # 변경사항 커밋
+    db.commit()
+
+    return {"message": "일기 사진 삭제 및 공유 일기 삭제 성공"}
+
 # 공유된 일기(이미지) 불러오기
 @app.get("/api/shared_diaries/get")
 async def get_shared_diaries(db: Session = Depends(get_db)):
@@ -747,7 +762,8 @@ async def get_shared_diaries(db: Session = Depends(get_db)):
     ).all()
 
     result = [
-        {
+        {   
+            "diary_id" : diary.diary_id,
             "photo": diary.photo,
             "content": diary.content
         }
@@ -756,6 +772,7 @@ async def get_shared_diaries(db: Session = Depends(get_db)):
 
     return result
 
+# 공유 취소하기
 @app.put("/api/share_diary/cancel/{diary_id}")
 async def cancel_share(diary_id: int, db: Session = Depends(get_db)):
     shared_diary = db.query(models.ShareDiary).filter(models.ShareDiary.diary_id == diary_id).first()
