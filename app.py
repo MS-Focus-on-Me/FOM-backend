@@ -344,6 +344,10 @@ async def delete_temp_diary(diary_id: int, db: Session = Depends(get_db)):
     
     if not diary:
         raise HTTPException(status_code=404, detail="일기를 찾을 수 없습니다.")
+    
+    # 관련 emotions와 psy 삭제
+    db.query(models.Emotion).filter(models.Emotion.diary_id == diary_id).delete()
+    db.query(models.Psy).filter(models.Psy.diary_id == diary_id).delete()
 
     # 삭제 수행
     db.delete(diary)
