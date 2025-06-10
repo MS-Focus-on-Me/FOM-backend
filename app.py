@@ -5,7 +5,7 @@ from pydantic import BaseModel
 from database import SessionLocal
 from sqlalchemy.orm import Session
 from datetime import date, datetime
-from sqlalchemy import func
+from sqlalchemy import func, asc
 from datetime import datetime, timedelta
 from dotenv import load_dotenv
 
@@ -245,7 +245,7 @@ async def create_diary(data: DiaryData, db: Session = Depends(get_db)):
             joy = sadness = anger = fear = disgust = anxiety = envy = bewilderment = boredom = 0
 
         # 기존 감정이 있는지 조회
-        existing_emotion = db.query(models.Emotion).filter(models.Emotion.diary_id == models.Diary.diary_id).first()
+        existing_emotion = db.query(models.Emotion).filter(models.Emotion.diary_id == diary_id).first()
 
         if existing_emotion:
             # 이미 존재하면 업데이트
@@ -264,7 +264,7 @@ async def create_diary(data: DiaryData, db: Session = Depends(get_db)):
             # 없으면 새로 생성
             new_emotion = models.Emotion(
                 user_id=data.user_id,
-                diary_id=new_diary.diary_id | existing_emotion.diary_id,
+                diary_id=diary_id,
                 joy=joy,
                 sadness=sadness,
                 anger=anger,
@@ -329,7 +329,7 @@ async def read_diary_by_date(user_id: int, selected_date: str, db: Session = Dep
         models.Diary.user_id == user_id,
         func.date(models.Diary.created_at) >= start_date,
         func.date(models.Diary.created_at) < end_date_inclusive
-    ).all()
+    ).order_by(asc(models.Diary.created_at)).all()
 
     if not diary_entries:
         return {"message": "일기가 없습니다."}
@@ -418,10 +418,12 @@ async def get_user_email(user_id: int, db: Session = Depends(get_db)):
         "user_id": user.user_id,
         "reference_text": user.reference_text,
         "email": user.email,
+
         "nation": imgsetting.nation,
         "sex": imgsetting.sex,
         "age": imgsetting.age
     }
+    print(user_data)
     return user_data
 
 # reference 선택
@@ -522,6 +524,53 @@ def create_image(data: ImageData, db: Session = Depends(get_db)):
         "URL": image_url,
         "FILENAME": filename
     }
+
+# 일기 이미지 조회
+@app.get("/api/diary/image/read")
+async def read_image(user_id: int, selected_date: str, db: Session = Depends(get_db)):
+    # 날짜 문자열 길이 체크
+    if len(selected_date) != 12:
+        raise HTTPException(status_code=400, detail="날짜 문자열이 올바른 길이가 아닙니다.")
+
+    # 날짜 문자열 분리
+    start_str = selected_date[:6]
+    end_str = selected_date[6:]
+
+    # 날짜 변환 시도
+    try:
+        start_date = datetime.strptime(start_str, "%y%m%d")
+        end_date = datetime.strptime(end_str, "%y%m%d")
+    except Exception:
+        raise HTTPException(status_code=400, detail="날짜 형식이 올바르지 않습니다.")
+
+    # 범위 체크
+    if end_date < start_date:
+        raise HTTPException(status_code=400, detail="종료 날짜가 시작 날짜보다 이전입니다.")
+
+    # 범위 종료일 +1일
+    end_date_inclusive = end_date + timedelta(days=1)
+
+    # 해당 범위 내 일기 중 image(photo)가 있는 것 조회
+    diaries = db.query(models.Diary).filter(
+        models.Diary.user_id == user_id,
+        models.Diary.created_at >= start_date,
+        models.Diary.created_at < end_date_inclusive,
+        models.Diary.photo != None,  # photo 값이 있거나 NULL이 아닌 경우
+        models.Diary.photo != ""     # 빈 문자열이 아니도록
+    ).all()
+
+    # 이미지와 일기 내용만 정리
+    result = []
+    for diary in diaries:
+        result.append({
+            "diary_id": diary.diary_id,
+            "photo": diary.photo,
+            "content": diary.content,
+            "created_at": diary.created_at
+        })
+
+    return result
+
 
 # 감정들의 평균
 def get_db_connection():
@@ -680,6 +729,7 @@ async def share_diary(data: ShareDiaryData, db: Session = Depends(get_db)):
         "share_diary_id": shared_diary.share_diary_id
     }
 
+# 공유된 일기(이미지) 불러오기
 @app.get("/api/shared_diaries/get")
 async def get_shared_diaries(db: Session = Depends(get_db)):
     # 오늘 날짜
@@ -713,6 +763,60 @@ async def get_shared_diaries(db: Session = Depends(get_db)):
 @app.get("/test")
 async def read_root():
     return {"message": "Hello, FastAPI"}
+
+# Pydantic 모델 정의
+class EmotionData(BaseModel):
+    user_id: int
+    diary_id: int
+    joy: int = 0
+    sadness: int = 0
+    anger: int = 0
+    fear: int = 0
+    disgust: int = 0
+    anxiety: int = 0
+    envy: int = 0
+    bewilderment: int = 0
+    boredom: int = 0
+    created_at: datetime
+
+@app.post("/api/emotion/create")
+async def create_emotion(data: EmotionData, db: Session = Depends(get_db)):
+    # 수동으로 입력받은 데이터로 Emotion 객체 생성
+    new_emotion = models.Emotion(
+        user_id=data.user_id,
+        diary_id=data.diary_id,
+        joy=data.joy,
+        sadness=data.sadness,
+        anger=data.anger,
+        fear=data.fear,
+        disgust=data.disgust,
+        anxiety=data.anxiety,
+        envy=data.envy,
+        bewilderment=data.bewilderment,
+        boredom=data.boredom,
+        created_at=data.created_at  # 사용자 지정 created_at
+    )
+    
+    # 데이터베이스에 추가하고 커밋
+    db.add(new_emotion)
+    db.commit()
+    db.refresh(new_emotion)
+
+    return {"message": "감정 데이터가 성공적으로 추가되었습니다.", "emotion_id": new_emotion.emotion_id}
+
+
+@app.delete("/api/emotion/delete")
+async def delete_emotion(emotion_id:int , db: Session = Depends(get_db)):
+    emotion = db.query(models.Emotion).filter(models.Emotion.emotion_id == emotion_id).first()
+    if not emotion:
+        raise HTTPException(status_code=404, detail="감정을 찾을 수 없습니다.")
+
+    # 삭제 수행
+    db.delete(emotion)
+    db.commit()
+
+    return {"message": "감정 삭제 성공"}
+
 
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 8000))
