@@ -1,6 +1,7 @@
 from sqlalchemy import Column, Integer, String, DateTime, ForeignKey, Boolean, Table, Text, BLOB, event
 from sqlalchemy.sql import func
 from database import Base
+from sqlalchemy.orm import relationship
 
 class User(Base):
     __tablename__ = 'users'
@@ -45,6 +46,8 @@ class Emotion(Base):
     boredom = Column(Integer, default=0)
     created_at = Column(DateTime(timezone=True), server_default=func.now())
 
+    
+
 class Psy(Base):
     __tablename__ = 'psy'
     psy_id = Column(Integer, primary_key=True, index=True, autoincrement=True)
@@ -69,13 +72,3 @@ class ShareDiary(Base):
     content = Column(Text)
     flag = Column(Boolean, default=False)
     created_at = Column(DateTime)
-
-# diary의 photo가 업데이트 되면 자동으로 share_diary의 photo가 업데이트
-# @event.listens_for(Diary, 'after_update')
-# def update_share_diary_photo(connection, target):
-#     # target은 업데이트된 Diary 인스턴스
-#     connection.execute(
-#         ShareDiary.__table__.update()
-#         .where(ShareDiary.diary_id == target.diary_id)
-#         .values(photo=target.photo)
-#     )
