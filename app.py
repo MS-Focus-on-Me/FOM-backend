@@ -758,7 +758,7 @@ async def get_shared_diaries(db: Session = Depends(get_db)):
 
 @app.put("/api/share_diary/cancel/{diary_id}")
 async def cancel_share(diary_id: int, db: Session = Depends(get_db)):
-    shared_diary = db.query(models.ShareDiary).filter(models.ShareDiaryDiary.share_diary_id == diary_id).first()
+    shared_diary = db.query(models.ShareDiary).filter(models.ShareDiary.diary_id == diary_id).first()
 
     if not shared_diary:
         raise HTTPException(status_code=404, detail="공유 일기를 찾을 수 없습니다.")
