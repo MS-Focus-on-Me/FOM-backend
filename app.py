@@ -730,6 +730,7 @@ async def share_diary(data: ShareDiaryData, db: Session = Depends(get_db)):
         raise HTTPException(status_code=404, detail="일기를 찾을 수 없음")
     
     anonymous_diary = request_anonymous(diary.content)
+    response_text = anonymous_diary.get('response', '')
     
     # 존재하지 않는 일기를 공유하지 않도록
     existing_shared = db.query(models.ShareDiary).filter(models.ShareDiary.diary_id == data.diary_id).first()
@@ -743,7 +744,7 @@ async def share_diary(data: ShareDiaryData, db: Session = Depends(get_db)):
         diary_id=data.diary_id,
         user_id=diary.user_id,  # 또는 다른 사용자 기준 (sharing 주체)
         photo=diary.photo,
-        content=anonymous_diary,
+        content=response_text,
         created_at=data.created_at,
         flag=True
     )
