@@ -6,21 +6,20 @@ from dotenv import load_dotenv
 
 load_dotenv()
 
-def generate_mone_pastel_image(diary_text):
+def generate_mone_pastel_image(diary_text, nation, sex, age):
 
-    nation = "대한민국"
-    sex = "남"
-    age = 26
-    
+    nation = nation
+    sex = sex
+    age = age
+
     prompt = f"""
-        {diary_text} 이 일기의 내용을 함축하는 그림을 한 장 그려줘.
-        그림 스타일은 vivid하지 않은 파스텔톤으로, 그리고 초등학교 4학년의 그림체로 그려줘. 
-        그림에는 어떠한 글자, 글씨, 문자도 나오지 않아야 해.
-        다음은 나에 대한 기본적인 정보들이야. 이미지를 생성할 때 다음 정보들을 참고해. 단, 참고를 하는 것이지, 무조건적으로 내 정보들이 이미지에 드러나게 할 필요는 없어. 
-        예를 들어, 내가 대한민국 사람이라고 해서 이미지에 무조건 태극기가 들어가야 할 필요는 없어.
-        국적: {nation}
-        성별: {sex}
-        나이: {age}
+            참고 내용 : {diary_text}
+            참고 내용을을 기반으로 모네의 그림체, 파스텔톤 색감을 사용하여 하루의 분위기와 감정을 표현한 한 장의 그림을 그려주세요. 
+            그림은 내용의 분위기를 시각적으로만 표현하는 용도입니다.
+            다음은 나에 대한 기본적인 정보들이야. 이미지를 생성할 때 다음 정보들을 참고해. 단, 참고를 하는 것이지, 무조건적으로 내 정보들이 이미지에 드러나게 할 필요는 없어. 예를 들어, 내가 대한민국 사람이라고 해서 이미지에 무조건 태극기가 들어가야 할 필요는 없어.
+            국적: {nation}
+            성별: {sex}
+            나이: {age}
         """
 
     api_key = os.getenv("DALLE_API_KEY")
