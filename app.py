@@ -577,7 +577,8 @@ async def read_image(user_id: int, selected_date: str, db: Session = Depends(get
             "diary_id": diary.diary_id,
             "photo": diary.photo,
             "content": diary.content,
-            "created_at": diary.created_at
+            "created_at": diary.created_at,
+            "summary": diary.summary
         })
 
     return result
