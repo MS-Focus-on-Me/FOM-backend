@@ -440,14 +440,20 @@ async def get_user_email(user_id: int, db: Session = Depends(get_db)):
     imgsetting = db.query(models.ImageSetting).filter(models.ImageSetting.user_id == user_id).first()
     if not user:
         raise HTTPException(status_code=404, detail="유저를 찾을 수 없음")
+    
+    # imgsetting이 None이면 기본값 할당
+    nation = imgsetting.nation if imgsetting else "대한민국"
+    sex = imgsetting.sex if imgsetting else "남"
+    age = imgsetting.age if imgsetting else 26
+
     user_data = {
         "user_id": user.user_id,
         "reference_text": user.reference_text,
         "email": user.email,
 
-        "nation": imgsetting.nation,
-        "sex": imgsetting.sex,
-        "age": imgsetting.age
+        "nation": nation,
+        "sex": sex,
+        "age": age
     }
     print(user_data)
     return user_data
