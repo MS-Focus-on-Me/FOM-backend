@@ -6,11 +6,11 @@ from dotenv import load_dotenv
 
 load_dotenv()
 
-def generate_mone_pastel_image(diary_text):
+def generate_mone_pastel_image(diary_text, nation, sex, age):
 
-    nation = "대한민국"
-    sex = "남"
-    age = 26
+    nation = nation
+    sex = sex
+    age = age
 
     prompt = f"""
         {diary_text} 이 일기의 내용을 함축하는 그림을 한 장 그려줘.
@@ -62,7 +62,10 @@ def generate_mone_pastel_image(diary_text):
 
 
 if __name__ == "__main__":
+    nation = "대한민국"
+    sex = "남"
+    age = 26
     diary_text = """오늘 하루는 정말 뜻깊고 소중한 시간이었어요. 아침 햇살이 창문을 통해 은은하게 들어오면서, 마음이 차분해지고 기분이 좋아졌어요. 잠깐 커피를 마시며 지난 일들을 되돌아보니, 작지만 소중한 순간들이 하나하나 떠올라 행복감이 밀려왔어요.  
 오늘은 미루었던 일들을 하나씩 해결하는 성취감도 느꼈고, 친구들과의 작은 대화 속에서도 따뜻함을 느꼈어요. 오늘의 하루가 감장을 채우고 마음을 더욱 풍요롭게 만들어준 것 같아요. 내일은 오늘보다 더 웃고, 더 성장하는 하루가 되도록 다짐하며 하루를 마무리했어요. 내일도 기대와 희망을 품고 힘차게 시작할게요.  
 이 작은 일기장이 오늘 하루를 기록하며, 내 마음속 소중한 기억들로 남기를 바랍니다. 내 마음에 새겨진 작은 행복들을 잊지 않고, 앞으로도 긍정적인 마음가짐으로 살아가야겠어요."""
-    generate_mone_pastel_image(diary_text)
+    generate_mone_pastel_image(diary_text, nation, sex, age)
