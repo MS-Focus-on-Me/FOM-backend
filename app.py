@@ -14,7 +14,9 @@ from service.convert_diary_format import writer_workflow
 from service.summary_diary import summary_workflow
 from service.emotion import request_gpt
 from service.diary_psy import request_psy
+from service.anonymous import request_anonymous
 from service.dalle_diary import generate_mone_pastel_image
+
 
 load_dotenv()
 
@@ -722,6 +724,8 @@ async def share_diary(data: ShareDiaryData, db: Session = Depends(get_db)):
     if not diary:
         raise HTTPException(status_code=404, detail="일기를 찾을 수 없음")
     
+    anonymous_diary = request_anonymous(diary.content)
+    
     # 존재하지 않는 일기를 공유하지 않도록
     existing_shared = db.query(models.ShareDiary).filter(models.ShareDiary.diary_id == data.diary_id).first()
     if existing_shared:
@@ -734,7 +738,7 @@ async def share_diary(data: ShareDiaryData, db: Session = Depends(get_db)):
         diary_id=data.diary_id,
         user_id=diary.user_id,  # 또는 다른 사용자 기준 (sharing 주체)
         photo=diary.photo,
-        content=diary.content,
+        content=anonymous_diary,
         created_at=data.created_at,
         flag=True
     )
