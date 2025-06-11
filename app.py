@@ -171,8 +171,8 @@ async def create_diary(data: DiaryData, db: Session = Depends(get_db)):
     
     diary_summary = await summary_workflow(data.content)
 
-    today_start = datetime.combine(date.today(), datetime.min.time())  # 오늘 00:00:00
-    today_end = datetime.combine(date.today(), datetime.max.time())    # 오늘 23:59:59.999999
+    today_start = datetime.combine(date.today(), datetime.min.time())  # 오늘(6월 12일) 00:00:00
+    today_end = datetime.combine(date.today(), datetime.max.time())    # 오늘(6월 12일) 23:59:59.999999
 
     # 오늘 등록된 일기 있는지 검색
     existing_diary = db.query(models.Diary).filter(
@@ -180,6 +180,13 @@ async def create_diary(data: DiaryData, db: Session = Depends(get_db)):
         models.Diary.created_at >= today_start,
         models.Diary.created_at <= today_end
     ).first()
+
+    # 6월 9일 : a
+    # 6월 10일 : b
+    # 6월 11일 : c 
+    # 6월 12일 : d
+    # 6월 13일 : e
+
 
     print("중간 점검 1")
 
@@ -210,7 +217,8 @@ async def create_diary(data: DiaryData, db: Session = Depends(get_db)):
     analysis_result = request_gpt(data.content)
     
     response_text = analysis_result.get('response', '')
-
+    # 디버깅용
+    print(response_text)
     print("############중간점검############")
 
     json_str = response_text.strip()
@@ -218,11 +226,14 @@ async def create_diary(data: DiaryData, db: Session = Depends(get_db)):
         json_str = json_str[len("```json"):].strip()
     if json_str.endswith("```"):
         json_str = json_str[:-3].strip()
-        
+    print("중간점검 5")
+    print(json_str)
+    
     if isinstance(analysis_result, dict):
         try:
             response_text = analysis_result['response']  # 문자열 추출
-
+            print(response_text)
+            print("중간점검 6")
             # "```json"과 "```" 문자를 제거하여 JSON 문자열만 추출
             json_str = response_text.strip()
             if json_str.startswith("```json"):
@@ -231,7 +242,9 @@ async def create_diary(data: DiaryData, db: Session = Depends(get_db)):
                 json_str = json_str[:-3].strip()
 
             # JSON 문자열을 딕셔너리로 로드
+            print(json_str)
             json_data = json.loads(json_str)
+            print(json_data)
             first_item = json_data[0]  # 리스트의 첫 번째 요소
             emotions = first_item['감정']
 
