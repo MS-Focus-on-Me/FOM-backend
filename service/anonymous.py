@@ -22,6 +22,6 @@ def request_anonymous(text):
     return response_json
 
 if __name__ == "__main__":
-    text = "내 이름은 이준형이고 나는 삼성전자에 취업했다가 어제 짤렸어 개열받아서 소주 10병에 콩나물국밥 조졌다."
+    text = "내 이름은 이주찬이고 나는 삼성전자에 취업했다가 어제 짤렸어 개열받아서 소주 10병에 콩나물국밥 조졌다."
     result = request_anonymous(text)
     print(result)
