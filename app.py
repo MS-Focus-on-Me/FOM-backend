@@ -1,12 +1,12 @@
 import models, os, uvicorn, json, mysql.connector
-from fastapi import FastAPI, HTTPException, Depends, Request
+from fastapi import FastAPI, HTTPException, Depends
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 from database import SessionLocal
 from sqlalchemy.orm import Session
 from datetime import date, datetime
 from sqlalchemy import func, asc
-from datetime import datetime, timedelta, timezone
+from datetime import datetime, timedelta
 from zoneinfo import ZoneInfo
 from dotenv import load_dotenv
 
@@ -520,11 +520,11 @@ def create_image(data: ImageData, db: Session = Depends(get_db)):
         raise HTTPException(status_code=404, detail="일기를 찾을 수 없습니다.")
     user_id = diary.user_id
 
-    user = db.query(models.User).filter(models.User.user_id == user_id).first()
+    imagesetting = db.query(models.ImageSetting).filter(models.ImageSetting.user_id == user_id).first()
 
-    nation = user.nation if user.nation is not None else "대한민국"
-    sex = user.sex if user.sex is not None else "남"
-    age = user.age if user.age is not None else 26
+    nation = imagesetting.nation if imagesetting.nation is not None else "대한민국"
+    sex = imagesetting.sex if imagesetting.sex is not None else "남"
+    age = imagesetting.age if imagesetting.age is not None else 26
 
     print(data.content)
     # 이미지 생성
@@ -872,5 +872,5 @@ if __name__ == "__main__":
     uvicorn.run("app:app", host="0.0.0.0", port=port)
 
 
-# source venv/bin/activate     
+# source venv/bin/activate
 # uvicorn app:app --host 0.0.0.0 --port 8000
