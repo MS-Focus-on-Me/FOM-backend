@@ -373,8 +373,12 @@ async def update_diary(diary_id: int, data: UpdateDiary, db: Session = Depends(g
 
     if data.title is not None:
         diary.title = data.title
+    
     if data.content is not None:
         diary.content = data.content
+        diary_summary = await summary_workflow(data.content)
+        diary.summary = diary_summary
+
         
     db.commit()
 
