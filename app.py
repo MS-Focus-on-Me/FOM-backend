@@ -518,10 +518,17 @@ def create_image(data: ImageData, db: Session = Depends(get_db)):
 
     if not diary:
         raise HTTPException(status_code=404, detail="일기를 찾을 수 없습니다.")
+    user_id = diary.user_id
+
+    user = db.query(models.User).filter(models.User.user_id == user_id).first()
+
+    nation = user.nation if user.nation is not None else "대한민국"
+    sex = user.sex if user.sex is not None else "남"
+    age = user.age if user.age is not None else 26
 
     print(data.content)
     # 이미지 생성
-    image_url, filename = generate_mone_pastel_image(data.content)
+    image_url, filename = generate_mone_pastel_image(data.content, nation, sex, age)
     
     # 기존 diary의 photo 필드를 새 URL로 수정
     diary.photo = image_url
