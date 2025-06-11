@@ -524,11 +524,16 @@ def create_image(data: ImageData, db: Session = Depends(get_db)):
 
     imagesetting = db.query(models.ImageSetting).filter(models.ImageSetting.user_id == user_id).first()
 
-    nation = imagesetting.nation if imagesetting.nation is not None else "대한민국"
-    sex = imagesetting.sex if imagesetting.sex is not None else "남"
-    age = imagesetting.age if imagesetting.age is not None else 26
+    if imagesetting:
+        nation = imagesetting.nation if imagesetting.nation is not None else "대한민국"
+        sex = imagesetting.sex if imagesetting.sex is not None else "남"
+        age = imagesetting.age if imagesetting.age is not None else 26
+    else:
+        # imagesetting이 없는 경우 기본값 할당
+        nation = "대한민국"
+        sex = "남"
+        age = 26
 
-    print(data.content)
     # 이미지 생성
     image_url, filename = generate_mone_pastel_image(data.content, nation, sex, age)
     
