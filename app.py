@@ -761,7 +761,6 @@ async def share_diary(data: ShareDiaryData, db: Session = Depends(get_db)):
     existing_shared = db.query(models.ShareDiary).filter(models.ShareDiary.diary_id == data.diary_id).first()
     if existing_shared:
         existing_shared.flag = True  # 공유로 설정
-        existing_shared.created_at = diary.created_at
         db.commit()
         return {"message": "일기가 이미 공유되고 있음"}
     
@@ -771,7 +770,7 @@ async def share_diary(data: ShareDiaryData, db: Session = Depends(get_db)):
         user_id=diary.user_id,  # 또는 다른 사용자 기준 (sharing 주체)
         photo=diary.photo,
         content=response_text,
-        created_at=diary.created_at,
+        created_at=data.created_at,
         flag=True
     )
     
