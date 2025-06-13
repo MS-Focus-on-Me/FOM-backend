@@ -7,11 +7,11 @@ load_dotenv()
 def request_gpt(text):
     emotion_endpoint = os.getenv("emotion_agent_endpoint")
     # method = post
-    
+
     headers = {
         "Content-Type": "application/json"
     }
-    
+
     body = {
         "text": text
     }
