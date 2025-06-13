@@ -200,7 +200,7 @@ async def create_diary(data: DiaryData, db: Session = Depends(get_db)):
 
     if existing_diary:
         existing_diary.content=data.content
-        existing_diary.created_at=data.created_at
+        existing_diary.created_at=created_date
         existing_diary.summary=diary_summary
         db.commit()
         db.refresh(existing_diary)
@@ -211,7 +211,7 @@ async def create_diary(data: DiaryData, db: Session = Depends(get_db)):
         new_diary = models.Diary(
             user_id=user.user_id,
             content=data.content,
-            created_at=data.created_at,
+            created_at=created_date,
             summary=diary_summary
         )
         print("중간 점검 3")
@@ -299,7 +299,8 @@ async def create_diary(data: DiaryData, db: Session = Depends(get_db)):
                 anxiety=anxiety,
                 envy=envy,
                 bewilderment=bewilderment,
-                boredom=boredom
+                boredom=boredom,
+                created_at=created_date
             )
             db.add(new_emotion)
             db.commit()
