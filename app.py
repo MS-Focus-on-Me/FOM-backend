@@ -177,24 +177,20 @@ async def create_diary(data: DiaryData, db: Session = Depends(get_db)):
     diary_summary = await summary_workflow(data.content)
 
     created_date = data.created_at.date()
+    print(created_date)
 
     today_start = datetime.combine(created_date, datetime.min.time())  # 오늘(6월 12일) 00:00:00
     today_end = datetime.combine(created_date, datetime.max.time())    # 오늘(6월 12일) 23:59:59.999999
 
-    
+    print(today_start)
+    print(today_end)
+
     # 오늘 등록된 일기 있는지 검색
     existing_diary = db.query(models.Diary).filter(
         models.Diary.user_id == data.user_id,
         models.Diary.created_at >= today_start,
         models.Diary.created_at <= today_end
     ).first()
-
-    # 6월 9일 : a
-    # 6월 10일 : b
-    # 6월 11일 : c 
-    # 6월 12일 : d
-    # 6월 13일 : e
-
 
     print("중간 점검 1")
 
