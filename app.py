@@ -168,12 +168,20 @@ async def create_diary(data: DiaryData, db: Session = Depends(get_db)):
 
     if not user:
         raise HTTPException(status_code=404, detail="사용자를 찾을 수 없습니다.")
+
+    # diary_summary = await summary_workflow(data.content)
+
+    # today_start = datetime.combine(date.today(), datetime.min.time())  # 오늘(6월 12일) 00:00:00
+    # today_end = datetime.combine(date.today(), datetime.max.time())    # 오늘(6월 12일) 23:59:59.999999    
     
     diary_summary = await summary_workflow(data.content)
 
-    today_start = datetime.combine(date.today(), datetime.min.time())  # 오늘(6월 12일) 00:00:00
-    today_end = datetime.combine(date.today(), datetime.max.time())    # 오늘(6월 12일) 23:59:59.999999
+    created_date = data.created_at.date()
 
+    today_start = datetime.combine(created_date, datetime.min.time())  # 오늘(6월 12일) 00:00:00
+    today_end = datetime.combine(created_date, datetime.max.time())    # 오늘(6월 12일) 23:59:59.999999
+
+    
     # 오늘 등록된 일기 있는지 검색
     existing_diary = db.query(models.Diary).filter(
         models.Diary.user_id == data.user_id,
