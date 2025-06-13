@@ -284,6 +284,7 @@ async def create_diary(data: DiaryData, db: Session = Depends(get_db)):
             existing_emotion.envy = envy
             existing_emotion.bewilderment = bewilderment
             existing_emotion.boredom = boredom
+            existing_emotion.created_at = created_date
             db.commit()
             db.refresh(existing_emotion)
         else:
