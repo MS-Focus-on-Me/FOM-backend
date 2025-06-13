@@ -748,7 +748,7 @@ async def share_diary(data: ShareDiaryData, db: Session = Depends(get_db)):
     if not diary:
         raise HTTPException(status_code=404, detail="일기를 찾을 수 없음")
     
-    anonymous_diary = request_anonymous(diary.content)
+    anonymous_diary = request_anonymous(diary.summary)
     response_text = anonymous_diary.get('response', '')
     
     # 존재하지 않는 일기를 공유하지 않도록
